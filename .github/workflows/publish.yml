@@ -1,0 +1,41 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  HATCH_INDEX_AUTH: ${{ secrets.HATCH_INDEX_AUTH }}
+  HATCH_INDEX_USER: ${{ secrets.HATCH_INDEX_USER }}
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    environment: release
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip 
+        pip install hatch
+    - name: Build package
+      run: hatch build
+    - name: Test package
+      run: hatch run test
+    - name: Publish package distributions to PyPI
+      run: hatch publish --user $HATCH_INDEX_USER --auth $HATCH_INDEX_AUTH
+      
