@@ -257,7 +257,7 @@ def dockipy():
             user = "1000:1000" 
 
 
-        runtime = get_runtime()
+        runtime = get_runtime(base_image)
         setup_venv(project_root, target_root, client, image, python_dep, docki_content, runtime, user, volumes)
        
         # Run a container from the image
@@ -374,7 +374,7 @@ def dockinotebook():
             volumes = {project_root: {"bind": target_root, "mode": "rw"}}
             user = "1000:1000" 
 
-        runtime = get_runtime()
+        runtime = get_runtime(base_image)
         setup_venv(project_root, target_root, client, image, python_dep, docki_content, runtime, user, volumes)
 
         # Run a container from the image
