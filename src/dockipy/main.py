@@ -1,9 +1,13 @@
-import docker
 from io import BytesIO
+import docker
 import pathlib
 import argparse
 import platform
-
+import yaml
+import sys
+import os
+import time
+import subprocess
 
 def build_dockerfile(
     base_image: str = "ubuntu:latest",
@@ -20,13 +24,91 @@ def build_dockerfile(
     ENV DEBIAN_FRONTEND=noninteractive
 
     RUN apt-get update && apt-get install -y {' '.join(system_dep)}
+    RUN mkdir -p /.local; chmod -R 777 /.local
 
     # Where pytorch will save parameters from pretrained networks
     ENV XDG_CACHE_HOME={project_root}/tmp
     '''
 
+def docki_examples1():
+    return f'''
+base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04
+shm_size: 16G # shared memory size
+tag: docki_image
+system_dep:
+    - python3
+    - python3-pip
+    - python3-dev
+    - python3-venv
+python_dep:
+    - jupyter
+notebook_token: docki
+notebook_password: docki
+    '''
+def docki_examples2():
+    return f'''
+base_image: ubuntu:latest
+shm_size: 16G # shared memory size
+tag: docki_image
+system_dep:
+    - python3
+    - python3-pip
+    - python3-dev
+    - python3-venv
+python_dep:
+    file: ./requirements.txt
+notebook_token: docki
+notebook_password: docki
+    '''
+def docki_file_yaml(requirements_exists=False):
+    examples1 = docki_examples1()
+    examples2 = docki_examples2()
+    commented_example1 = "\n".join([f"# {line}" for line in examples1.split("\n")])
+    commented_example2 = "\n".join([f"# {line}" for line in examples2.split("\n")])
+    return f'''# docki.yaml
+# This file is used to specify the base image, system dependencies and python dependencies for the Docker container.
+# If the file does not exist, a template will be created in the project root using docki init.
+
+# base_image: The base image for the Docker container, you dan find images on Docker Hub.
+# system_dep: A list of system dependencies to install in the Docker container. install with apt-get.
+# python_dep: A list of python dependencies to install in the Docker container or a path to a requirements.txt file.
+
+# example 1:
+{commented_example1}
+
+# example 2:
+{commented_example2}
+{examples2 if requirements_exists else examples1}
+'''
+
+def docki_init(project_root, override=False):
+    docki_file = project_root / "docki.yaml"
+    requirements = project_root / "requirements.txt"
+    if not docki_file.exists():
+        docki_file.write_text(docki_file_yaml(requirements.exists()))
+        print(f"Created docki.yaml in {project_root}")
+    else:
+        if override:
+            docki_file.write_text(docki_file_yaml(requirements.exists()))
+            print(f"Overrided docki.yaml in {project_root}")
+        else:
+            print(f"docki.yaml already exists in {project_root}")
+
+def docki():
+    argparser = argparse.ArgumentParser(
+        prog="docki",
+        description="Create a docki.yaml file in the project root", 
+        epilog="This file is used to specify the base image, system dependencies and python dependencies for the Docker container.",
+        )
+    argparser.add_argument("--init", action="store_true", help="Create a docki.yaml file in the project root")
+    argparser.add_argument("-f", action="store_true", help="Override the docki.yaml file in the project root")
+    args = argparser.parse_args()
+    project_root = pathlib.Path(".").resolve()
+    if args.init:
+        docki_init(project_root, args.f)
+
 def find_project_root():
-    files_to_find = ["setup.py", "requirements.txt", "pyproject.toml", ".git"]
+    files_to_find = ["docki.yaml", "requirements.txt", "pyproject.toml", ".git"]
     current_dir = pathlib.Path(".").resolve()
     path = []
     while current_dir != current_dir.parent:
@@ -35,116 +117,284 @@ def find_project_root():
             if (current_dir / file).exists():
                 return "/"+"/".join(path), str(current_dir), f"/{current_dir.name}"
         current_dir = current_dir.parent
-    return "/"+"/".join(path), str(current_dir), f"/{current_dir.name}"
+    return None, None, None
 
-def main():
-    work_dir, project_root, target_root = find_project_root()
-    help =  f"""Replace python with dockipy to run your python script in a Docker container.
-            Example: dockipy my_script.py, this will run my_script.py in a Docker container.
-            requirements.txt in the project root will be installed in the python environment.
-            system_deps.txt in the project root will be installed in the container.
-            If these files do not exist, they will be created in the project root."""
-    argparser = argparse.ArgumentParser(
-        prog="dockipy",
-        description="Python but in a Docker container", 
-        epilog=help,
-        )
+def get_runtime():
+    try:
+        subprocess.check_output('nvidia-smi')
+        return "nvidia"
+    except Exception:
+        return None
+help =  f"""Replace python with dockipy to run your python script in a Docker container.
+Example: dockipy my_script.py, this will run my_script.py in a Docker container.
 
-    argparser.add_argument("command", nargs="+", help="The python script to run in the container")
+A docki.yaml file is required in the project root to specify the base image, system dependencies and python dependencies.
+If these files do not exist, they will be created in the project root if possible. otherwise, run 'docki --init' to create the docki.yaml file at the project root.
+usage: 
+    dockipy [OPTIONS] COMMAND
 
-    args = argparser.parse_args()
+    options:
+        -h, --help  Show this message and exit.
+        --init      Create a docki.yaml file in the project root.
 
-    # Create a Docker client
-    missing = False
+    commands:
+        COMMAND     The command to run in the Docker container.
+"""
+
+def argsparse():
+    args = sys.argv
+    if len(args) == 1:
+        print(help)
+        exit(1)
+    if args[1] == "-h" or args[1] == "--help":
+        print(help)
+        exit(0)
+    if args[1] == "--init":
+        docki()
+        exit(0)
+    command = args[1:]
+    return command
+
+def get_docki_config(project_root):
+    if project_root is None:
+        print("No project root found")
+        print("Please run 'docki --init' in your project root to create a docki.yaml file")
+        exit(1)
+    docki_file = pathlib.Path(project_root) / "docki.yaml"
+    if not docki_file.exists() and project_root is not None:
+        print(f"No docki.yaml file found in {project_root}")
+        docki_init(project_root)
+        print("Please verify the docki.yaml file and run the script again.")
+        exit(1)
+    docki_content = docki_file.read_text()
+    docki_config = yaml.safe_load(docki_content)
+    missing_values = []
+    if "base_image" not in docki_config:
+        missing_values.append("base_image")
+    if "system_dep" not in docki_config:
+        missing_values.append("system_dep")
+    if "python_dep" not in docki_config:
+        missing_values.append("python_dep")
+    if len(missing_values) > 0:
+        print(f"Missing values in docki.yaml: {', '.join(missing_values)}")
+        print("Please fill in the missing values and run the script again.")
+        exit(1)
+    return docki_config, docki_content
+
+def build_docker_image(base_image, system_dep, project_root, tag):
+    dockerfile = build_dockerfile(base_image, system_dep, project_root)
     client = docker.from_env()
-
-
-    system_deps_file = pathlib.Path(project_root) / "system_deps.txt"
-    if not system_deps_file.exists():
-        print(f"No system_deps.txt file found in {project_root}")
-        system_deps_file.write_text("# base image, e.g nvidia/cuda:11.8.0-devel-ubuntu22.04, ubuntu:latest\nnvidia/cuda:11.8.0-devel-ubuntu22.04\n# dependencies\npython3\npython3-pip\npython3-dev\npython3-venv\n")
-        print(f"Created an system_deps.txt file in {project_root}")
-        missing = True
-    else:
-        base_image, *system_dep = list(filter(lambda l: not l.strip().startswith("#"),  system_deps_file.read_text().split("\n")))
-        if len(system_dep) == 0:
-            print(f"system_deps.txt is empty")
-
-    requirements =  pathlib.Path(project_root) / "requirements.txt"
-    if not requirements.exists():
-        print(f"No requirements.txt file found in {project_root}")
-        requirements.touch()
-        print(f"Created an empty requirements.txt file in {project_root}")
-        missing = True
-    else:
-        deps = requirements.read_text().split("\n")
-        if len(deps) == 0:
-            print(f"requirements.txt is empty")
-    
-    if missing:
-        print("Please fill in the missing files and run the script again.")
-        return
-    # Define the Dockerfile
-    dockerfile = build_dockerfile(
-        base_image=base_image,
-        system_dep=system_dep,
-        project_root=project_root
-    )
-
-    # Build the Docker image
-    print(f"Building the Docker image based on {base_image}...")
     image, build_log = client.images.build(
         fileobj=BytesIO(dockerfile.encode('utf-8')), 
-        tag="party_image", 
+        tag=tag, 
         rm=True,
     )
-
     for key, value in list(build_log)[-1].items():
         print(value, end="")
-            
-    try:
-        # build venv and install requirements
-        if platform.system() == "Linux":
-            volumes = {project_root: {"bind": target_root, "mode": "rw"}, "mnt": {"bind": "/mnt", "mode": "rw"}}
+    return image, client
+
+def setup_venv(project_root, target_root, client, image, python_dep, docki_content, runtime, user, volumes):
+    if "file" in python_dep:
+        requirements = pathlib.Path(project_root) / python_dep.get("file")
+        if not requirements.exists():
+            print(f"Requirements file {requirements} not found")
+            return
         else:
-            volumes = {project_root: {"bind": target_root, "mode": "rw"}}
+            requirements_cmd = f"-r {requirements}"
+    else:
+        requirements_cmd = " ".join(python_dep)
+    lock_content = ""
+    docki_lock_file = pathlib.Path(f"{project_root}/venv/docki.lock")
+
+    if docki_lock_file.exists():
+        lock_content = docki_lock_file.read_text()
+    if lock_content != docki_content:
+        print("Building the virtual environment and installing the requirements...")
         container = client.containers.run(image,
-                                            f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install -r requirements.txt"',
+                                            f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}"',
                                             stdout=True,
                                             stderr=True,
                                             tty = True,
                                             remove=True,
                                             detach = True,
+                                            user=user,
                                             volumes=volumes,
-                                            working_dir=target_root
+                                            working_dir=target_root,
+                                            runtime=runtime,
                                             )
         for line in container.logs(stream=True):
             try:
                 print(line.decode('utf-8'), end="") 
             except:
                 pass
+        docki_lock_file.write_text(docki_content)
+    else:
+        print("Requirements already installed.")
+
+def dockipy():
+    work_dir, project_root, target_root = find_project_root()
+
+    command = argsparse()
+    docki_config, docki_content = get_docki_config(project_root)
+    
+    base_image = docki_config.get("base_image")
+    system_dep = docki_config.get("system_dep")
+    python_dep = docki_config.get("python_dep")
+    shm_size = docki_config.get("shm_size", "16G")
+    tag = docki_config.get("tag", "docki_image")
+    
+
+    print(f"Building the Docker image based on {base_image}...")
+    image, client = build_docker_image(base_image, system_dep, project_root, tag)
             
+    try:
+        # build venv and install requirements
+        if platform.system() == "Linux":
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}, "mnt": {"bind": "/mnt", "mode": "rw"}}
+            user = f"{os.getuid()}:{os.getgid()}"
+        else:
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}}
+            user = "1000:1000" 
+
+
+        runtime = get_runtime()
+        setup_venv(project_root, target_root, client, image, python_dep, docki_content, runtime, user, volumes)
+       
         # Run a container from the image
-        command = " ".join(args.command)
-        print(f"Running the command: {command}, target_root: {target_root}, work_dir: {work_dir}")
+        command = " ".join(command)
+        print(f"Running the command: {command}")
         container = client.containers.run(image, 
                                             f'{target_root}/venv/bin/python3 {command}',
                                             stdout=True,
                                             stderr=True,
                                             tty = True,
                                             # remove=True,
+                                            shm_size=shm_size,
+                                            network_mode="host",
                                             detach = True,
-                                            volumes={project_root: {"bind": target_root, "mode": "rw"}},
-                                            working_dir=work_dir
+                                            user=user,
+                                            volumes=volumes,
+                                            working_dir=work_dir,
+                                            runtime=runtime,
                                             )
-
-        for line in container.logs(stream=True):
-            print(line.decode('utf-8'), end="")
+        container.reload()
+        while container.status == "running":
+            for line in container.logs(stream=True):
+                print(line.decode('utf-8'), end="")
+            time.sleep(0.1)
+            container.reload()
     except Exception as e:
         print(e)
     finally:
         container.stop()
         container.remove(force=True)
 
+def dockishell():
+    work_dir, project_root, target_root = find_project_root()
+
+    command = argsparse()
+
+    docki_config, docki_content = get_docki_config(project_root)
+    
+    base_image = docki_config.get("base_image")
+    system_dep = docki_config.get("system_dep")
+    shm_size = docki_config.get("shm_size", "16G")
+    tag = docki_config.get("tag", "docki_image")
+    
+    print(f"Building the Docker image based on {base_image}...")
+    image, client = build_docker_image(base_image, system_dep, project_root, tag)
+
+    try:
+        if platform.system() == "Linux":
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}, "mnt": {"bind": "/mnt", "mode": "rw"}}
+            user = f"{os.getuid()}:{os.getgid()}"
+        else:
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}}
+            user = "1000:1000" 
+
+        runtime = get_runtime()
+
+        # Run a container from the image
+        command = " ".join(command)
+        container = client.containers.run(image, 
+                                            command,
+                                            stdout=True,
+                                            stderr=True,
+                                            tty=True,
+                                            remove=True,
+                                            shm_size=shm_size,
+                                            network_mode="host",
+                                            detach = True,
+                                            user=user,
+                                            volumes=volumes,
+                                            working_dir=work_dir,
+                                            runtime=runtime,
+                                            )
+        container.reload()
+        while container.status == "running":
+            for line in container.logs(stream=True):
+                print(line.decode('utf-8'), end="")
+            time.sleep(0.1)
+            container.reload()
+    except Exception as e:
+        pass
+
+def dockinotebook():
+    work_dir, project_root, target_root = find_project_root()
+
+    docki_config, docki_content = get_docki_config(project_root)
+    
+    base_image = docki_config.get("base_image")
+    system_dep = docki_config.get("system_dep")
+    python_dep = docki_config.get("python_dep")
+    shm_size = docki_config.get("shm_size", "16G")
+    tag = docki_config.get("tag", "docki")
+    token = docki_config.get("notebook_token", "docki")
+    password = docki_config.get("notebook_password", "docki")
+    
+    print(f"Building the Docker image based on {base_image}...")
+    image, client = build_docker_image(base_image, system_dep, project_root, tag)
+    command = f"{target_root}/venv/bin/jupyter notebook --no-browser --ServerApp.allow_origin='*' "+\
+    f" --ServerApp.token='{token}'"+\
+    f" --ServerApp.password='{password}'"+\
+    f" --ServerApp.root_dir='{work_dir}/'"+\
+    f" --ServerApp.runtime_dir ='{work_dir}/'"
+
+    try:
+        if platform.system() == "Linux":
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}, "mnt": {"bind": "/mnt", "mode": "rw"}}
+            user = f"{os.getuid()}:{os.getgid()}"
+        else:
+            volumes = {project_root: {"bind": target_root, "mode": "rw"}}
+            user = "1000:1000" 
+
+        runtime = get_runtime()
+        setup_venv(project_root, target_root, client, image, python_dep, docki_content, runtime, user, volumes)
+
+        # Run a container from the image
+        container = client.containers.run(image, 
+                                            command,
+                                            stdout=True,
+                                            stderr=True,
+                                            tty=True,
+                                            remove=True,
+                                            shm_size=shm_size,
+                                            network_mode="host",
+                                            detach = True,
+                                            user=user,
+                                            volumes=volumes,
+                                            working_dir=work_dir,
+                                            runtime=runtime,
+                                            )
+        container.reload()
+        while container.status == "running":
+            for line in container.logs(stream=True):
+                print(line.decode('utf-8'), end="")
+            time.sleep(0.1)
+            container.reload()
+    except Exception as e:
+        container.stop()
+
+
 if __name__ == "__main__":
-    main()
+    dockipy()

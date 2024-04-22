@@ -75,8 +75,11 @@ omit = [
 dockipy = ["src/dockipy", "*/dockipy/src/dockipy"]
 tests = ["tests", "*/dockipy/tests"]
 
-[tool.hatch.scripts]
-dockipy = "src.dockipy.main:main"
+[project.scripts]
+dockipy = "dockipy.main:dockipy"
+dockishell = "dockipy.main:dockishell"
+dockinotebook = "dockipy.main:dockinotebook"
+docki = "dockipy.main:docki"
 
 [tool.coverage.report]
 exclude_lines = [
