@@ -119,12 +119,12 @@ def find_project_root():
         current_dir = current_dir.parent
     return None, None, None
 
-def get_runtime():
-    try:
-        subprocess.check_output('nvidia-smi')
+def get_runtime(base_image):
+    if "cuda" in base_image:
         return "nvidia"
-    except Exception:
-        return None
+    if "nvidia" in base_image:
+        return "nvidia"
+    return None
 help =  f"""Replace python with dockipy to run your python script in a Docker container.
 Example: dockipy my_script.py, this will run my_script.py in a Docker container.
 
@@ -315,7 +315,7 @@ def dockishell():
             volumes = {project_root: {"bind": target_root, "mode": "rw"}}
             user = "1000:1000" 
 
-        runtime = get_runtime()
+        runtime = get_runtime(base_image)
 
         # Run a container from the image
         command = " ".join(command)
