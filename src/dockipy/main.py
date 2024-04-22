@@ -125,13 +125,26 @@ def get_runtime(base_image):
     if "nvidia" in base_image:
         return "nvidia"
     return None
+
+def read_logs(container):
+    first = True
+    while container.status == "running" or first:
+        first = False
+        for line in container.logs(stream=True):
+            print(line.decode('utf-8'), end="")
+        time.sleep(0.1)
+        try:
+            container.reload()
+        except:
+            break
+
 help =  f"""Replace python with dockipy to run your python script in a Docker container.
 Example: dockipy my_script.py, this will run my_script.py in a Docker container.
 
 A docki.yaml file is required in the project root to specify the base image, system dependencies and python dependencies.
 If these files do not exist, they will be created in the project root if possible. otherwise, run 'docki --init' to create the docki.yaml file at the project root.
 usage: 
-    dockipy [OPTIONS] COMMAND
+    docki[py,shell] [OPTIONS] COMMAND
 
     options:
         -h, --help  Show this message and exit.
@@ -277,12 +290,7 @@ def dockipy():
                                             working_dir=work_dir,
                                             runtime=runtime,
                                             )
-        container.reload()
-        while container.status == "running":
-            for line in container.logs(stream=True):
-                print(line.decode('utf-8'), end="")
-            time.sleep(0.1)
-            container.reload()
+        read_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")
         container.stop()
@@ -333,12 +341,7 @@ def dockishell():
                                             working_dir=work_dir,
                                             runtime=runtime,
                                             )
-        container.reload()
-        while container.status == "running":
-            for line in container.logs(stream=True):
-                print(line.decode('utf-8'), end="")
-            time.sleep(0.1)
-            container.reload()
+        read_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")
         container.stop()
@@ -392,12 +395,7 @@ def dockinotebook():
                                             working_dir=work_dir,
                                             runtime=runtime,
                                             )
-        container.reload()
-        while container.status == "running":
-            for line in container.logs(stream=True):
-                print(line.decode('utf-8'), end="")
-            time.sleep(0.1)
-            container.reload()
+        read_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")
         container.stop()
