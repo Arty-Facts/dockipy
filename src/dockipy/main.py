@@ -275,7 +275,6 @@ def dockipy():
        
         # Run a container from the image
         command = " ".join(command)
-        print(f"Running the command: {command}")
         container = client.containers.run(image, 
                                             f'{target_root}/venv/bin/python3 {command}',
                                             stdout=True,
@@ -366,8 +365,7 @@ def dockinotebook():
     command = f"{target_root}/venv/bin/jupyter notebook --no-browser --ServerApp.allow_origin='*' "+\
     f" --ServerApp.token='{token}'"+\
     f" --ServerApp.password='{password}'"+\
-    f" --ServerApp.root_dir='{work_dir}/'"+\
-    f" --ServerApp.runtime_dir ='{work_dir}/'"
+    f" --ServerApp.root_dir='{work_dir}/'"
 
     try:
         if platform.system() == "Linux":
