@@ -283,6 +283,9 @@ def dockipy():
                 print(line.decode('utf-8'), end="")
             time.sleep(0.1)
             container.reload()
+    except KeyboardInterrupt:
+        print("Shutting down the container")
+        container.stop()
     except Exception as e:
         print(e)
     finally:
@@ -336,8 +339,11 @@ def dockishell():
                 print(line.decode('utf-8'), end="")
             time.sleep(0.1)
             container.reload()
+    except KeyboardInterrupt:
+        print("Shutting down the container")
+        container.stop()
     except Exception as e:
-        pass
+        print(e)
 
 def dockinotebook():
     work_dir, project_root, target_root = find_project_root()
@@ -392,8 +398,11 @@ def dockinotebook():
                 print(line.decode('utf-8'), end="")
             time.sleep(0.1)
             container.reload()
-    except Exception as e:
+    except KeyboardInterrupt:
+        print("Shutting down the container")
         container.stop()
+    except Exception as e:
+        print(e)
 
 
 if __name__ == "__main__":
