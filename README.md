@@ -99,7 +99,6 @@ notebook_password: docki
 ```
 ## TODO
 - [ ] Add support Windows Notebooks
-- [ ] Add support Windows Shell
 - [ ] Add support for Docker GPU driver installation on WLS2
 
 ## License

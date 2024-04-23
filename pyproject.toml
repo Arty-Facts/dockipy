@@ -76,10 +76,10 @@ dockipy = ["src/dockipy", "*/dockipy/src/dockipy"]
 tests = ["tests", "*/dockipy/tests"]
 
 [project.scripts]
-dockipy = "dockipy.main:dockipy"
-dockishell = "dockipy.main:dockishell"
-dockinotebook = "dockipy.main:dockinotebook"
-docki = "dockipy.main:docki"
+dockipy = "dockipy.dockipy:dockipy"
+dockishell = "dockipy.dockishell:dockishell"
+dockinotebook = "dockipy.dockinotebook:dockinotebook"
+docki = "dockipy.utils:docki"
 
 [tool.coverage.report]
 exclude_lines = [
