@@ -100,6 +100,7 @@ notebook_password: docki
 ## TODO
 - [ ] Add support Windows Notebooks
 - [ ] Add support for Docker GPU driver installation on WLS2
+- [ ] Add support for Mac. I don't have a Mac! Pls send donations to my onlyfans so that i can afford one!
 
 ## License
 
