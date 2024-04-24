@@ -2,7 +2,7 @@
 import dockipy.utils as utils
 import sys
 
-def dockinotebook():
+def dockibook():
     work_dir, project_root, target_root = utils.find_project_root()
 
     command = sys.argv[1:]

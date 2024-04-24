@@ -78,8 +78,10 @@ tests = ["tests", "*/dockipy/tests"]
 [project.scripts]
 dockipy = "dockipy.dockipy:dockipy"
 dockishell = "dockipy.dockishell:dockishell"
-dockinotebook = "dockipy.dockinotebook:dockinotebook"
+dockibook = "dockipy.dockibook:dockibook"
 docki = "dockipy.utils:docki"
+envipy = "dockipy.envipy:envipy"
+envibook = "dockipy.envibook:envibook"
 
 [tool.coverage.report]
 exclude_lines = [

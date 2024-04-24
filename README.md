@@ -42,12 +42,23 @@ Need to run an arbitrary command in a container? No problem! Just fire up dockis
 dockishell nvidia-smi
 ```
 
-#### How to Use dockinotebook
-Want to unleash the power of Jupyter Notebooks in a container? Say no more! Use dockinotebook and open the link in your browser, colab or visual studio code.
+#### How to Use dockibook
+Want to unleash the power of Jupyter Notebooks in a container? Say no more! Use dockibook and open the link in your browser, colab or visual studio code.
 
 ```bash
-dockinotebook
+dockibook
 ```
+
+#### Don't want to use Docker but still would like to use the configuration? No problem! Use envipy and envibook to run your code and notebooks in a virtual environment.
+Since Windows is such a messy work with rawdogging your environment is totally okay.
+```bash
+envipy my_script.py
+```
+    
+```bash
+envibook
+```
+
 
 ## Configure environment
 Tired of Docker feeling like a high-maintenance diva? Set up your environment like a pro with docki.yaml. No more Docker dramas, just smooth sailing.
@@ -55,6 +66,7 @@ Tired of Docker feeling like a high-maintenance diva? Set up your environment li
 ```bash
 docki --init
 ```
+
 ### docki.yaml
 
 This file is used to specify the base image, system dependencies, and python dependencies for the Docker container.
