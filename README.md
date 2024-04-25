@@ -109,6 +109,20 @@ python_dep:
 notebook_token: docki
 notebook_password: docki
 ```
+
+## Is something went wrong? 
+
+You can stop or kill the container with the following commands. It will use the tag from the docki.yaml file to stop or kill the container.
+
+```bash
+dockikill
+```
+
+```bash
+dockistop
+```
+But this is not happening often, right? 🤞
+
 ## TODO
 - [ ] Add support Windows Notebooks
 - [ ] Add support for Docker GPU driver installation on WLS2

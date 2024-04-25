@@ -290,3 +290,56 @@ def argsparse():
         exit(0)
     command = args[1:]
     return command
+
+
+def dockikill():
+    work_dir, project_root, target_root = find_project_root()
+
+    docki_config = get_docki_config(project_root)
+    tag = docki_config["tag"]
+
+    client = docker.from_env()
+
+    containers = client.containers.list()
+    
+    for container in containers:
+        # Check if the container is created from the specified image
+        if container.image.tags:
+            if tag in container.image.tags[0]:
+                print(f"Killing container: {container.id} running image: {tag}")
+                container.kill()
+                container.remove(force=True)
+                print(f"Container {container.id} has been killed.")
+        else:
+            # This handles cases where the image may not have a tag
+            if tag in container.image.attrs['RepoTags'][0]:
+                print(f"Killing container: {container.id} running image: {tag}")
+                container.kill()
+                container.remove(force=True)
+                print(f"Container {container.id} has been killed.")
+
+def dockistop():
+    work_dir, project_root, target_root = find_project_root()
+
+    docki_config = get_docki_config(project_root)
+    tag = docki_config["tag"]
+
+    client = docker.from_env()
+
+    containers = client.containers.list()
+    
+    for container in containers:
+        # Check if the container is created from the specified image
+        if container.image.tags:
+            if tag in container.image.tags[0]:
+                print(f"Stopping container: {container.id} running image: {tag}")
+                container.stop()
+                container.remove(force=True)
+                print(f"Container {container.id} has been stopped.")
+        else:
+            # This handles cases where the image may not have a tag
+            if tag in container.image.attrs['RepoTags'][0]:
+                print(f"Stopping container: {container.id} running image: {tag}")
+                container.stop()
+                container.remove(force=True)
+                print(f"Container {container.id} has been stopped.")
