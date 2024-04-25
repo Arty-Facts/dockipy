@@ -15,7 +15,7 @@ def build_dockerfile(
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
 
-    RUN apt-get update && apt-get install -y {' '.join(system_dep)}
+    RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing {' '.join(system_dep)}
     RUN mkdir -p /.local; chmod -R 777 /.local
 
     # Where pytorch will save parameters from pretrained networks
