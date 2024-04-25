@@ -229,7 +229,7 @@ def setup_venv(project_root, target_root, client, image, config):
             print(f"Requirements file {requirements} not found")
             return
         else:
-            requirements_cmd = f"-r {target_root}/{python_dep.get("file")}"
+            requirements_cmd = f'-r {target_root}/{python_dep.get("file")}'
             python_dep = requirements.read_text().split("\n")
     else:
         requirements_cmd = " ".join(python_dep)
