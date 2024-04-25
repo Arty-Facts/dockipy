@@ -126,7 +126,7 @@ But this is not happening often, right? 🤞
 ## TODO
 - [ ] Add support Windows Notebooks
 - [ ] Add support for Docker GPU driver installation on WLS2
-- [ ] Add support for Mac. I don't have a Mac! Pls send donations to my [onlyfans](https://onlyfans.com/u413381845) so that i can afford one!
+- [ ] Add support for Mac. I don't have a Mac! Pls send donations to my [onlyfans](https://onlyfans.com/arty-facts) so that i can afford one!
 
 ## License
 
