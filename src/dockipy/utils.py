@@ -200,6 +200,11 @@ def run_container(client, image, command, config, work_dir, project_root, target
     user = get_user()
     runtime = get_runtime(base_image)
 
+    # add venv/bin to PATH
+    command = ' '.join(command)
+    command = f'export PATH={target_root}/venv/bin:$PATH; {command}'
+    command = f'bash -c "{command}"'
+
     # Run a container from the image
     container = client.containers.run(image, 
                                         command,
@@ -300,23 +305,18 @@ def dockikill():
 
     client = docker.from_env()
 
-    containers = client.containers.list()
-    
-    for container in containers:
-        # Check if the container is created from the specified image
-        if container.image.tags:
-            if tag in container.image.tags[0]:
-                print(f"Killing container: {container.id} running image: {tag}")
-                container.kill()
-                container.remove(force=True)
-                print(f"Container {container.id} has been killed.")
-        else:
-            # This handles cases where the image may not have a tag
-            if tag in container.image.attrs['RepoTags'][0]:
-                print(f"Killing container: {container.id} running image: {tag}")
-                container.kill()
-                container.remove(force=True)
-                print(f"Container {container.id} has been killed.")
+     # Try to get the container by its name
+    try:
+        container = client.containers.get(tag)
+        print(f"Found container {tag} with ID: {container.id}")
+        container.kill()
+        container.remove()
+        print(f"Container {tag} has been removed.")
+    except docker.errors.NotFound:
+        print(f"No container with the name {tag} found.")
+    except docker.errors.APIError as e:
+        print(f"An error occurred: {str(e)}")
+
 
 def dockistop():
     work_dir, project_root, target_root = find_project_root()
@@ -326,20 +326,14 @@ def dockistop():
 
     client = docker.from_env()
 
-    containers = client.containers.list()
-    
-    for container in containers:
-        # Check if the container is created from the specified image
-        if container.image.tags:
-            if tag in container.image.tags[0]:
-                print(f"Stopping container: {container.id} running image: {tag}")
-                container.stop()
-                container.remove(force=True)
-                print(f"Container {container.id} has been stopped.")
-        else:
-            # This handles cases where the image may not have a tag
-            if tag in container.image.attrs['RepoTags'][0]:
-                print(f"Stopping container: {container.id} running image: {tag}")
-                container.stop()
-                container.remove(force=True)
-                print(f"Container {container.id} has been stopped.")
+    # Try to get the container by its name
+    try:
+        container = client.containers.get(tag)
+        print(f"Found container {tag} with ID: {container.id}")
+        container.stop()
+        container.remove()
+        print(f"Container {tag} has been removed.")
+    except docker.errors.NotFound:
+        print(f"No container with the name {tag} found.")
+    except docker.errors.APIError as e:
+        print(f"An error occurred: {str(e)}")

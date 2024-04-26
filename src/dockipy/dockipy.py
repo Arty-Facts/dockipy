@@ -9,8 +9,7 @@ def dockipy():
 
     image, client = utils.build_docker_image(project_root, docki_config)
     
-    command = f"{target_root}/venv/bin/python3 "+" ".join(command)
-    print(command)
+    command = [f"{target_root}/venv/bin/python3"] + command
     try:
         utils.setup_venv(project_root, target_root, client, image, docki_config)
         # Run a container from the image
