@@ -18,7 +18,7 @@ def build_dockerfile(
 
     RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing {' '.join(system_dep)}
     RUN mkdir -p /.local; chmod -R 777 /.local
-    ENV HOME={project_root}
+    ENV HOME={project_root}/tmp
     # Where pytorch will save parameters from pretrained networks
     ENV XDG_CACHE_HOME={project_root}/tmp
     '''
