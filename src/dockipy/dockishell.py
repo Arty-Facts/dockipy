@@ -7,7 +7,7 @@ def dockishell():
 
     docki_config = utils.get_docki_config(project_root)
 
-    image, client = utils.build_docker_image(project_root, docki_config)
+    image, client = utils.build_docker_image(target_root, docki_config)
 
     try:
         container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root)

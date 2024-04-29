@@ -13,7 +13,7 @@ def dockibook():
     password = docki_config.get("notebook_password", "docki")
     notebook_args = docki_config.get("notebook_args", "")
     
-    image, client = utils.build_docker_image(project_root, docki_config)
+    image, client = utils.build_docker_image(target_root, docki_config)
 
     command = [f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
     f" --ServerApp.token='{token}'"+\

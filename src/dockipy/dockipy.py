@@ -7,7 +7,7 @@ def dockipy():
 
     docki_config = utils.get_docki_config(project_root)
 
-    image, client = utils.build_docker_image(project_root, docki_config)
+    image, client = utils.build_docker_image(target_root, docki_config)
     
     command = [f"{target_root}/venv/bin/python3"] + command
     try:
