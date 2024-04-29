@@ -1,5 +1,6 @@
 import sys, pathlib, argparse, time, docker, yaml, platform, os, copy
 from io import BytesIO
+from dockipy.__about__ import __version__ as dockipy_version
 
 def build_dockerfile(
     base_image: str = "ubuntu:latest",
@@ -262,13 +263,14 @@ def setup_venv(project_root, target_root, client, image, config):
     else:
         print("Requirements already installed.")
 
-help = f"""Replace python with dockipy to run your python script in a Docker container.
+help = f"""dockipy version {dockipy_version} 
+Replace python with dockipy to run your python script in a Docker container.
 Example: dockipy my_script.py, this will run my_script.py in a Docker container.
 
 A docki.yaml file is required in the project root to specify the base image, system dependencies and python dependencies.
 If these files do not exist, they will be created in the project root if possible. otherwise, run 'docki --init' to create the docki.yaml file at the project root.
 usage: 
-    docki[py,shell] [OPTIONS] COMMAND
+    docki[py, shell, book] [OPTIONS] COMMAND
 
     options:
         -h, --help  Show this message and exit.
