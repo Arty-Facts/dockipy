@@ -15,10 +15,10 @@ def dockibook():
     
     image, client = utils.build_docker_image(project_root, docki_config)
 
-    command = f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
+    command = [f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
     f" --ServerApp.token='{token}'"+\
     f" --ServerApp.password='{password}'"+\
-    f" --ServerApp.root_dir='{work_dir}/'" + " ".join(command)
+    f" --ServerApp.root_dir='{work_dir}/'"] + command
 
     try:
         utils.setup_venv(project_root, target_root, client, image, docki_config)

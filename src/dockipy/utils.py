@@ -16,7 +16,7 @@ def build_dockerfile(
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
 
-    RUN apt-get update && apt-get install -y {' '.join(system_dep)}
+    RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing {' '.join(system_dep)}
     RUN mkdir -p /.local; chmod -R 777 /.local
 
     # Where pytorch will save parameters from pretrained networks
@@ -201,6 +201,11 @@ def run_container(client, image, command, config, work_dir, project_root, target
     user = get_user()
     runtime = get_runtime(base_image)
 
+    # add venv/bin to PATH
+    command = ' '.join(command)
+    command = f'export PATH={target_root}/venv/bin:$PATH; {command}'
+    command = f'bash -c "{command}"'
+
     # Run a container from the image
     container = client.containers.run(image, 
                                         command,
@@ -230,7 +235,7 @@ def setup_venv(project_root, target_root, client, image, config):
             print(f"Requirements file {requirements} not found")
             return
         else:
-            requirements_cmd = f"-r {requirements}"
+            requirements_cmd = f'-r {target_root}/{python_dep.get("file")}'
             python_dep = requirements.read_text().split("\n")
     else:
         requirements_cmd = " ".join(python_dep)
@@ -292,3 +297,45 @@ def argsparse():
         exit(0)
     command = args[1:]
     return command
+
+
+def dockikill():
+    work_dir, project_root, target_root = find_project_root()
+
+    docki_config = get_docki_config(project_root)
+    tag = docki_config["tag"]
+
+    client = docker.from_env()
+
+     # Try to get the container by its name
+    try:
+        container = client.containers.get(tag)
+        print(f"Found container {tag} with ID: {container.id}")
+        container.kill()
+        container.remove()
+        print(f"Container {tag} has been removed.")
+    except docker.errors.NotFound:
+        print(f"No container with the name {tag} found.")
+    except docker.errors.APIError as e:
+        print(f"An error occurred: {str(e)}")
+
+
+def dockistop():
+    work_dir, project_root, target_root = find_project_root()
+
+    docki_config = get_docki_config(project_root)
+    tag = docki_config["tag"]
+
+    client = docker.from_env()
+
+    # Try to get the container by its name
+    try:
+        container = client.containers.get(tag)
+        print(f"Found container {tag} with ID: {container.id}")
+        container.stop()
+        container.remove()
+        print(f"Container {tag} has been removed.")
+    except docker.errors.NotFound:
+        print(f"No container with the name {tag} found.")
+    except docker.errors.APIError as e:
+        print(f"An error occurred: {str(e)}")
