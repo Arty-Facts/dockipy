@@ -46,7 +46,7 @@ dockishell nvidia-smi
 Want to unleash the power of Jupyter Notebooks in a container? Say no more! Use dockibook and open the link in your browser, colab or visual studio code.
 
 ```bash
-dockibook
+dockibook .
 ```
 
 #### Don't want to use Docker but still would like to use the configuration? No problem! Use envipy and envibook to run your code and notebooks in a virtual environment.
@@ -56,7 +56,7 @@ envipy my_script.py
 ```
     
 ```bash
-envibook
+envibook .
 ```
 
 
