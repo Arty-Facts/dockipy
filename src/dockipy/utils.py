@@ -163,7 +163,7 @@ def get_docki_config(project_root):
 
 def get_volumes(project_root, target_root):
     if platform.system() == "Linux":
-       return {project_root: {"bind": target_root, "mode": "rw"}, "mnt": {"bind": "/mnt", "mode": "rw"}}
+       return {project_root: {"bind": target_root, "mode": "rw"}, "/mnt": {"bind": "/mnt", "mode": "rw"}}
     else:
        return {project_root: {"bind": target_root, "mode": "rw"}}
     
