@@ -104,7 +104,7 @@ def find_project_root():
     current_dir = pathlib.Path(".").resolve()
     path = []
     while current_dir != current_dir.parent:
-        path.append(current_dir.name)
+        path.insert(0, current_dir.name)
         for file in files_to_find:
             if (current_dir / file).exists():
                 return "/"+"/".join(path), str(current_dir), f"/{current_dir.name}"
