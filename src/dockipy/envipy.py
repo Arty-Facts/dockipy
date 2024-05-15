@@ -39,7 +39,8 @@ def envipy():
         docki_lock_content = copy.deepcopy(docki_config)
         docki_lock_content["python_dep"] = python_dep
         docki_lock_file.write_text(yaml.safe_dump(docki_lock_content))
-
+    if len(command) == 0:
+        return
     command = ' '.join(command)
     if platform.system() == "Windows":
         subprocess.run(f'{project_root.absolute()}/venv/Scripts/python {command}', shell=True)
