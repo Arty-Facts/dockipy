@@ -17,12 +17,18 @@ def build_dockerfile(
     ENV LANG=C.UTF-8
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
-    
-    RUN addgroup --gid {group_id} docki && adduser --disabled-password --gecos '' --uid {user_id} --gid {group_id} docki
+
+    RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing sudo {' '.join(system_dep)}
+    # Add a new user with useradd
+    RUN useradd -ms /bin/bash docki
+    RUN usermod -u {user_id} docki
+    RUN groupmod -g {group_id} docki
+    # Optional: Add the user to the sudo group
+    RUN usermod -aG sudo docki
+
+    # Set the new user as the current user
     USER docki
     
-
-    RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing {' '.join(system_dep)}
     RUN mkdir -p /.local; chmod -R 777 /.local
     ENV HOME={project_root}/tmp
     # Where pytorch will save parameters from pretrained networks
