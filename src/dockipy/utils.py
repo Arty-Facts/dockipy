@@ -20,7 +20,7 @@ def build_dockerfile(
 
     RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing sudo {' '.join(system_dep)}
     # Add a new user with the same user id as the host user
-    RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos '' --uid {user_id} --gid {group_id} docki
+    RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos "" --uid {user_id} --gid {group_id} docki
     
     RUN mkdir -p /.local; chmod -R 777 /.local
     ENV HOME={project_root}/tmp
