@@ -19,15 +19,8 @@ def build_dockerfile(
     ENV DEBIAN_FRONTEND=noninteractive
 
     RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing sudo {' '.join(system_dep)}
-    # Add a new user with useradd
-    RUN useradd -ms /bin/bash docki
-    RUN usermod -u {user_id} docki
-    RUN groupmod -g {group_id} docki
-    # Optional: Add the user to the sudo group
-    RUN usermod -aG sudo docki
-
-    # Set the new user as the current user
-    USER docki
+    # Add a new user with the same user id as the host user
+    RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos '' --uid {user_id} --gid {group_id} docki
     
     RUN mkdir -p /.local; chmod -R 777 /.local
     ENV HOME={project_root}/tmp
