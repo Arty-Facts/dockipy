@@ -6,6 +6,8 @@ def build_dockerfile(
     base_image: str = "ubuntu:latest",
     system_dep: list = "",
     project_root: str = "/",
+    user_id: int = 1000,
+    group_id: int = 1000,
 ):
     return f'''
     FROM {base_image}
@@ -15,6 +17,10 @@ def build_dockerfile(
     ENV LANG=C.UTF-8
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
+    
+    RUN addgroup --gid {group_id} docki && adduser --disabled-password --gecos '' --uid {user_id} --gid {group_id} docki
+    USER docki
+    
 
     RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing {' '.join(system_dep)}
     RUN mkdir -p /.local; chmod -R 777 /.local
@@ -178,9 +184,10 @@ def build_docker_image(project_root, config):
     base_image = config.get("base_image")
     system_dep = config.get("system_dep")
     tag = config.get("tag", "docki_image")
+    uid, gid = get_user().split(":")
     if ":latest" not in tag:
         tag += ":latest"
-    dockerfile = build_dockerfile(base_image, system_dep, project_root)
+    dockerfile = build_dockerfile(base_image, system_dep, project_root, uid, gid)
     client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")
     image, build_log = client.images.build(
