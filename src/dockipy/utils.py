@@ -200,6 +200,8 @@ def build_docker_image(project_root, config):
         fileobj=BytesIO(dockerfile.encode('utf-8')), 
         tag=tag, 
         rm=True,
+        network_mode="host",
+        
     )
     for key, value in list(build_log)[-1].items():
         print(value, end="")
