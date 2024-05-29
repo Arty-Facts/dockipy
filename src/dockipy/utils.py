@@ -21,8 +21,8 @@ def build_dockerfile(
         apt-get install -y --no-install-recommends \
         software-properties-common && \
         add-apt-repository universe && \
-        apt-get update && \
-        apt-get install -y --no-install-recommends \
+        apt-get update 
+    RUN apt-get install -y --no-install-recommends \
         sudo {' '.join(system_dep)} && \
         rm -rf /var/lib/apt/lists/*
 
@@ -201,7 +201,7 @@ def build_docker_image(project_root, config):
         tag=tag, 
         rm=True,
         network_mode="host",
-        
+
     )
     for key, value in list(build_log)[-1].items():
         print(value, end="")
