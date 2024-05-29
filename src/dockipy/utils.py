@@ -17,8 +17,15 @@ def build_dockerfile(
     ENV LANG=C.UTF-8
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
+    RUN apt-get update && \
+        apt-get install -y --no-install-recommends \
+        software-properties-common && \
+        add-apt-repository universe && \
+        apt-get update && \
+        apt-get install -y --no-install-recommends \
+        sudo {' '.join(system_dep)} && \
+        rm -rf /var/lib/apt/lists/*
 
-    RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing sudo {' '.join(system_dep)}
     # Add a new user with the same user id as the host user
     RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos "" --uid {user_id} --gid {group_id} docki
     
