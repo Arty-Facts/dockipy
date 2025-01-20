@@ -29,10 +29,10 @@ class HostManager:
         # Create a new pane for the host
         if len(self.session.windows) == 0:
             window = self.session.new_window(attach=False)
+            pane = window.panes[0]
         else:
             window = self.session.active_window
-
-        pane = window.split()
+            pane = window.split()
         window.select_layout("tiled")
         pane.send_keys(f"ssh {self.host}")
         return pane
