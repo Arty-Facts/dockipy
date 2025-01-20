@@ -1,4 +1,4 @@
-import sys, pathlib, argparse, time, docker, yaml, platform, os, copy, subprocess
+import sys, pathlib, argparse, time, docker, yaml, platform, os, copy, subprocess, atexit, readline
 from io import BytesIO
 from dockipy.__about__ import __version__ as dockipy_version
 import libtmux
@@ -168,7 +168,27 @@ def launch_terminal_with_tmux(session_name):
     else:
         raise ValueError("Unsupported platform.")
 
+HISTORY_FILE = os.path.expanduser("~/.docki_remote_history")
+
+def setup_readline():
+    """
+    Set up readline for command history and advanced input support.
+    """
+    # Load command history if available
+    if os.path.exists(HISTORY_FILE):
+        readline.read_history_file(HISTORY_FILE)
+
+    # Ensure command history is saved at exit
+    atexit.register(lambda: readline.write_history_file(HISTORY_FILE))
+
+    # Enable tab completion (optional)
+    readline.parse_and_bind("tab: complete")
+
+
 def docki_remote(docki_config):
+    
+    setup_readline()
+
     server = libtmux.Server()
     tmux_session = docki_config["tag"]
     host_managers = []
