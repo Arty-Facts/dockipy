@@ -156,8 +156,8 @@ def docki_remote(docki_config):
     server = libtmux.Server()
     tmux_session = docki_config["tag"]
     host_managers = []
-    for host in docki_config["remote"]["hosts"]:
-        host_manager = HostManager(server, tmux_session, host["name"])
+    for id, host in enumerate(docki_config["remote"]["hosts"]):
+        host_manager = HostManager(server, tmux_session, host["name"], id)
         if "workspace" in host:
             host_manager.send_command(f"cd {host['workspace']}")
         host_managers.append(host_manager)
