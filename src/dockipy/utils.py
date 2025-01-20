@@ -1,4 +1,4 @@
-import sys, pathlib, argparse, time, docker, yaml, platform, os, copy
+import sys, pathlib, argparse, time, docker, yaml, platform, os, copy, subprocess
 from io import BytesIO
 from dockipy.__about__ import __version__ as dockipy_version
 import libtmux
@@ -90,20 +90,19 @@ base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04
 shm_size: 16G # shared memory size
 tag: docki
 system_dep:
-    - python3
-    - python3-pip
-    - python3-dev
-    - python3-venv
+  - python3
+  - python3-pip
+  - python3-dev
+  - python3-venv
 python_dep:
-    file: ./requirements.txt
+  file: ./requirements.txt
 notebook_token: docki
 notebook_password: docki
 remote:
-    hosts:
-        - name: username@host1
-                workspace: /path/to/workspace
-        - name: username@host2
-                workspace: /path/to/workspace
+  hosts:
+    - name: username@host1
+    - name: username@host2
+      workspace: /path/to/workspace
 '''
 def docki_file_yaml(requirements_exists=False):
     examples1 = docki_examples1()
@@ -151,6 +150,24 @@ def docki():
         docki_config = get_docki_config(project_root, remote=True)
         docki_remote(docki_config)
 
+def launch_terminal_with_tmux(session_name):
+    """
+    Launch a new terminal window and attach to a tmux session.
+
+    Args:
+        session_name (str): The name of the tmux session to attach to.
+    """
+    # Determine the terminal command based on the OS
+    if platform.system() == "Linux":
+        # For Linux (adjust for your terminal emulator)
+        subprocess.Popen(["gnome-terminal", "--", "tmux", "attach-session", "-t", session_name])
+    elif platform.system() == "Darwin":  # macOS
+        subprocess.Popen(["open", "-a", "Terminal.app", f"tmux attach-session -t {session_name}"])
+    elif platform.system() == "Windows":
+        print("Tmux is not natively supported on Windows. Use WSL or an alternative setup.")
+    else:
+        raise ValueError("Unsupported platform.")
+
 def docki_remote(docki_config):
     server = libtmux.Server()
     tmux_session = docki_config["tag"]
@@ -161,6 +178,7 @@ def docki_remote(docki_config):
             host_manager.send_command(f"cd {host['workspace']}")
         host_managers.append(host_manager)
     print("Connected to remote hosts.")
+    launch_terminal_with_tmux(tmux_session)
     while True:
         try:
             command = input(f"(remote) {tmux_session}> ")
