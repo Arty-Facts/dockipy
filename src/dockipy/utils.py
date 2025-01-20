@@ -157,7 +157,7 @@ def docki_remote(docki_config):
     print("Connected to remote hosts.")
     while True:
         try:
-            command = input("Enter a command to run on the remote hosts: ")
+            command = input(f"(remote) {tmux_session}> ")
             if command == "exit":
                 break
             for manager in host_managers:
@@ -377,7 +377,6 @@ def argsparse():
     if args[1] == "--remote":
         remote = True
         args = args[1:]
-        exit(0)
     command = args[1:]
     return command, remote
 
