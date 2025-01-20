@@ -34,10 +34,11 @@ class HostManager:
             window = self.session.active_window
         
         panes = window.panes
+        print(len(panes))
         if len(panes) < self.id:
             pane = window.split()
         else:
-            pane = panes[self.id]
+            pane = window.panes[self.id]
 
         window.select_layout("tiled")
         pane.send_keys(f"ssh {self.host}")
