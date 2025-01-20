@@ -4,7 +4,7 @@ from dockipy.__about__ import __version__ as dockipy_version
 import libtmux
 
 class HostManager:
-    def __init__(self, server, tmux_session, host):
+    def __init__(self, server, tmux_session, host, id):
         """
         Initialize a HostManager for a specific host.
 
@@ -14,6 +14,7 @@ class HostManager:
             host (str): The hostname or IP of the target machine.
         """
         self.host = host
+        self.id = id
         self.session = self._get_or_create_session(server, tmux_session)
         self.pane = self._get_or_create_pane()
 
@@ -29,10 +30,15 @@ class HostManager:
         # Create a new pane for the host
         if len(self.session.windows) == 0:
             window = self.session.new_window(attach=False)
-            pane = window.panes[0]
         else:
             window = self.session.active_window
+        
+        panes = window.panes
+        if len(panes) < self.id:
             pane = window.split()
+        else:
+            pane = panes[self.id]
+
         window.select_layout("tiled")
         pane.send_keys(f"ssh {self.host}")
         return pane
