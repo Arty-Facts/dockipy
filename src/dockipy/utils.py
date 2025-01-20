@@ -1,6 +1,49 @@
 import sys, pathlib, argparse, time, docker, yaml, platform, os, copy
 from io import BytesIO
 from dockipy.__about__ import __version__ as dockipy_version
+import libtmux
+
+class HostManager:
+    def __init__(self, server, tmux_session, host):
+        """
+        Initialize a HostManager for a specific host.
+
+        Args:
+            server (libtmux.Server): The tmux server instance.
+            tmux_session (str): The tmux session name.
+            host (str): The hostname or IP of the target machine.
+        """
+        self.host = host
+        self.session = self._get_or_create_session(server, tmux_session)
+        self.pane = self._get_or_create_pane()
+
+    def _get_or_create_session(self, server, tmux_session):
+        # Find the session or create it
+        for session in server.sessions:
+            if session.session_name == tmux_session:
+                return session
+        return server.new_session(session_name=tmux_session)
+
+    def _get_or_create_pane(self):
+
+        # Create a new pane for the host
+        if len(self.session.windows) == 0:
+            window = self.session.new_window(attach=False)
+        else:
+            window = self.session.active_window
+
+        pane = window.split()
+        window.select_layout("tiled")
+        pane.send_keys(f"ssh {self.host}")
+        return pane
+
+    def send_command(self, command):
+        self.pane.send_keys(command)
+
+    def close(self):
+        self.pane.kill_pane()
+
+
 
 def build_dockerfile(
     base_image: str = "ubuntu:latest",
@@ -35,26 +78,12 @@ def build_dockerfile(
     ENV XDG_CACHE_HOME={project_root}/tmp
     '''
 
+
 def docki_examples1():
-    return f'''
-base_image: ubuntu:latest
-shm_size: 16G # shared memory size
-tag: docki_image
-system_dep:
-    - python3
-    - python3-pip
-    - python3-dev
-    - python3-venv
-python_dep:
-    - jupyter
-notebook_token: docki
-notebook_password: docki
-    '''
-def docki_examples2():
     return f'''
 base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04
 shm_size: 16G # shared memory size
-tag: docki_image
+tag: docki
 system_dep:
     - python3
     - python3-pip
@@ -64,12 +93,16 @@ python_dep:
     file: ./requirements.txt
 notebook_token: docki
 notebook_password: docki
-    '''
+remote:
+    hosts:
+        - name: username@host1
+                workspace: /path/to/workspace
+        - name: username@host2
+                workspace: /path/to/workspace
+'''
 def docki_file_yaml(requirements_exists=False):
     examples1 = docki_examples1()
-    examples2 = docki_examples2()
     commented_example1 = "\n".join([f"# {line}" for line in examples1.split("\n")])
-    commented_example2 = "\n".join([f"# {line}" for line in examples2.split("\n")])
     return f'''# docki.yaml
 # This file is used to specify the base image, system dependencies and python dependencies for the Docker container.
 # If the file does not exist, a template will be created in the project root using docki init.
@@ -78,12 +111,9 @@ def docki_file_yaml(requirements_exists=False):
 # system_dep: A list of system dependencies to install in the Docker container. install with apt-get.
 # python_dep: A list of python dependencies to install in the Docker container or a path to a requirements.txt file.
 
-# example 1:
+# example:
 {commented_example1}
 
-# example 2:
-{commented_example2}
-{examples2 if requirements_exists else examples1}
 '''
 
 def docki_init(project_root, override=False):
@@ -106,10 +136,40 @@ def docki():
         epilog="This file is used to specify the base image, system dependencies and python dependencies for the Docker container.",
         )
     argparser.add_argument("--init", action="store_true", help="Create a docki.yaml file in the project root")
+    argparser.add_argument("--remote", action="store_true", help="Opens a one to many remote connection on hosts specified in the docki.yaml file")
     args = argparser.parse_args()
     project_root = pathlib.Path(".").resolve()
     if args.init:
         docki_init(project_root)
+    if args.remote:
+        work_dir, project_root, target_root = find_project_root()
+        docki_config = get_docki_config(project_root, remote=True)
+        docki_remote(docki_config)
+
+def docki_remote(docki_config):
+    server = libtmux.Server()
+    tmux_session = docki_config["tag"]
+    host_managers = []
+    for host in docki_config["remote"]["hosts"]:
+        host_manager = HostManager(server, tmux_session, host["name"])
+        host_manager.send_command(f"cd {host['workspace']}")
+        host_managers.append(host_manager)
+    print("Connected to remote hosts.")
+    while True:
+        try:
+            command = input("Enter a command to run on the remote hosts: ")
+            if command == "exit":
+                break
+            for manager in host_managers:
+                manager.send_command(command)
+        except KeyboardInterrupt:
+            # send ctrl+c to all panes
+            for manager in host_managers:
+                manager.send_command("C-c")
+    for manager in host_managers:
+        manager.close()
+    print("Disconnected from remote hosts.")
+
 
 def find_project_root():
     files_to_find = ["docki.yaml", "requirements.txt", "pyproject.toml", ".git"]
@@ -147,7 +207,7 @@ def print_logs(container):
         except:
             return
 
-def get_docki_config(project_root):
+def get_docki_config(project_root, remote=False):
     if project_root is None:
         print("No project root found")
         print("Please run 'docki --init' in your project root to create a docki.yaml file")
@@ -167,6 +227,9 @@ def get_docki_config(project_root):
         missing_values.append("system_dep")
     if "python_dep" not in docki_config:
         missing_values.append("python_dep")
+    if remote:
+        if "remote" not in docki_config:
+            missing_values.append("remote")
     if len(missing_values) > 0:
         print(f"Missing values in docki.yaml: {', '.join(missing_values)}")
         print("Please fill in the missing values and run the script again.")
@@ -300,6 +363,7 @@ usage:
         COMMAND     The command to run in the Docker container.
 """
 def argsparse():
+    remote = False
     args = sys.argv
     if len(args) == 1:
         print(help)
@@ -310,8 +374,12 @@ def argsparse():
     if args[1] == "--init":
         docki()
         exit(0)
+    if args[1] == "--remote":
+        remote = True
+        args = args[1:]
+        exit(0)
     command = args[1:]
-    return command
+    return command, remote
 
 
 def dockikill():

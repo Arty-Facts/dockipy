@@ -5,7 +5,7 @@ import pathlib, yaml, platform, subprocess, copy
 def envibook():
     work_dir, project_root, target_root = utils.find_project_root()
 
-    command = utils.argsparse()
+    command, _remote = utils.argsparse()
 
     docki_config = utils.get_docki_config(project_root)
 

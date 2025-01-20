@@ -5,9 +5,9 @@ import pathlib, yaml, platform, subprocess, copy
 def envipy():
     work_dir, project_root, target_root = utils.find_project_root()
 
-    command = utils.argsparse()
+    command, remote = utils.argsparse()
 
-    docki_config = utils.get_docki_config(project_root)
+    docki_config = utils.get_docki_config(project_root, remote)
 
     project_root = pathlib.Path(project_root)
 
