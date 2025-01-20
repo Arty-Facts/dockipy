@@ -41,7 +41,7 @@ class HostManager:
         self.pane.send_keys(command)
 
     def close(self):
-        self.pane.kill_pane()
+        self.pane.kill()
 
 
 
@@ -152,7 +152,8 @@ def docki_remote(docki_config):
     host_managers = []
     for host in docki_config["remote"]["hosts"]:
         host_manager = HostManager(server, tmux_session, host["name"])
-        host_manager.send_command(f"cd {host['workspace']}")
+        if "workspace" in host:
+            host_manager.send_command(f"cd {host['workspace']}")
         host_managers.append(host_manager)
     print("Connected to remote hosts.")
     while True:
