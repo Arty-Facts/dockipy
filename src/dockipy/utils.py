@@ -312,7 +312,7 @@ def build_docker_image(project_root, config, clean=False):
         tag=tag, 
         rm=True,
         network_mode="host",
-        buildargs={"NO_CACHE": clean}
+        buildargs={"NO_CACHE": "true" if clean else "false"},
     )
     for key, value in list(build_log)[-1].items():
         print(value, end="")
