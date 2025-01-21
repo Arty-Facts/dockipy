@@ -67,11 +67,11 @@ SHELL ["/bin/bash", "-c"]
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository -y universe && \
-    apt-get update && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-RUN apt-get install -y --no-install-recommends \
+    apt-get update 
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     sudo {' '.join(system_dep)} && \
+    apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # Add a new user with the same user id as the host user
