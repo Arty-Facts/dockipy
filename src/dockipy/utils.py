@@ -476,7 +476,7 @@ def dockiprune():
     client = docker.from_env()
     # Prune the containers
     containers = client.containers.prune()
-    freed_space_containers += containers.get("SpaceReclaimed", 0)
+    freed_space_containers = containers.get("SpaceReclaimed", 0)
     print(f"Freed {freed_space_containers} bytes of disk space.")
     freed_space += freed_space_containers
 
