@@ -65,12 +65,12 @@ def build_dockerfile(
     ENV LANG=C.UTF-8
     ENV LC_ALL=C.UTF-8
     ENV DEBIAN_FRONTEND=noninteractive
-    RUN apt-get update && \
-        apt-get install -y --no-install-recommends \
+    RUN apt update && \
+        apt install -y --no-install-recommends \
         software-properties-common && \
         add-apt-repository universe && \
-        apt-get update 
-    RUN apt-get install -y --no-install-recommends \
+        apt update 
+    RUN apt install -y --no-install-recommends \
         sudo {' '.join(system_dep)} && \
         rm -rf /var/lib/apt/lists/*
 
@@ -112,7 +112,7 @@ def docki_file_yaml(requirements_exists=False):
 # If the file does not exist, a template will be created in the project root using docki init.
 
 # base_image: The base image for the Docker container, you dan find images on Docker Hub.
-# system_dep: A list of system dependencies to install in the Docker container. install with apt-get.
+# system_dep: A list of system dependencies to install in the Docker container. install with apt.
 # python_dep: A list of python dependencies to install in the Docker container or a path to a requirements.txt file.
 
 # example:
