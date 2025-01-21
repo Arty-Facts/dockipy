@@ -157,8 +157,11 @@ def launch_terminal_with_tmux(session_name):
     Args:
         session_name (str): The name of the tmux session to attach to.
     """
+
     # Determine the terminal command based on the OS
     if platform.system() == "Linux":
+        # Enable mouse support in the tmux session
+        subprocess.run(["tmux", "set-option", "-t", session_name, "-g", "mouse", "on"], check=True)
         # For Linux (adjust for your terminal emulator)
         subprocess.Popen(["gnome-terminal", "--", "tmux", "attach-session", "-t", session_name])
     elif platform.system() == "Darwin":  # macOS
