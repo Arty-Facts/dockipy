@@ -59,8 +59,6 @@ def build_dockerfile(
 ):
     return f'''FROM {base_image}
 
-SHELL ["/bin/bash", "-c"]
-
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
