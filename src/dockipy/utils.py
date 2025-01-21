@@ -475,26 +475,27 @@ def dockiprune():
     freed_space = 0
     client = docker.from_env()
     # Prune the containers
+    to_gb = 1024**3
     containers = client.containers.prune()
-    freed_space_containers = containers.get("SpaceReclaimed", 0) * 1e-9
+    freed_space_containers = containers.get("SpaceReclaimed", 0) / to_gb
     print(f"Containers: Freed {freed_space_containers:.2f} GB of disk space.")
     freed_space += freed_space_containers
 
     # Prune the images
     images = client.images.prune()
-    freed_space_images = images.get("SpaceReclaimed", 0) * 1e-9
+    freed_space_images = images.get("SpaceReclaimed", 0) / to_gb
     print(f"Images: Freed {freed_space_images:.2f} GB of disk space.")
     freed_space += freed_space_images
 
     # Prune the volumes
     volumes = client.volumes.prune()
-    freed_space_volumes = volumes.get("SpaceReclaimed", 0)  * 1e-9
+    freed_space_volumes = volumes.get("SpaceReclaimed", 0)  / to_gb
     print(f"Volumes: Freed {freed_space_volumes:.2f} GB of disk space.")
     freed_space += freed_space_volumes
 
     # Prune the networks
     networks = client.networks.prune()
-    freed_space_networks = networks.get("SpaceReclaimed", 0) * 1e-9
+    freed_space_networks = networks.get("SpaceReclaimed", 0) / to_gb
     print(f"Networks: Freed {freed_space_networks:.2f} GB of disk space.")
     freed_space += freed_space_networks
 
