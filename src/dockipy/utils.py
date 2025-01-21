@@ -4,7 +4,7 @@ from dockipy.__about__ import __version__ as dockipy_version
 import libtmux
 
 class HostManager:
-    def __init__(self, server, tmux_session, host, id):
+    def __init__(self, tmux_session, host, id):
         """
         Initialize a HostManager for a specific host.
 
@@ -15,15 +15,8 @@ class HostManager:
         """
         self.host = host
         self.id = id
-        self.session = self._get_or_create_session(server, tmux_session)
+        self.session = tmux_session
         self.pane = self._get_or_create_pane()
-
-    def _get_or_create_session(self, server, tmux_session):
-        # Find the session or create it
-        for session in server.sessions:
-            if session.session_name == tmux_session:
-                return session
-        return server.new_session(session_name=tmux_session)
 
     def _get_or_create_pane(self):
 
@@ -187,21 +180,31 @@ def setup_readline():
     # Enable tab completion (optional)
     readline.parse_and_bind("tab: complete")
 
+def create_session(tmux_session):
+    server = libtmux.Server()
+    session_name = tmux_session
+    found = 1
+    for session in server.sessions:
+        if session.session_name == session_name:
+            session_name = f"{tmux_session}_{found}"
+            found += 1
+    return server.new_session(session_name=session_name), session_name
+
 
 def docki_remote(docki_config):
     
     setup_readline()
 
-    server = libtmux.Server()
-    tmux_session = docki_config["tag"]
+    
+    tmux_session, session_name = create_session(docki_config["tag"])
     host_managers = []
     for id, host in enumerate(docki_config["remote"]["hosts"]):
-        host_manager = HostManager(server, tmux_session, host["name"], id)
+        host_manager = HostManager(tmux_session, host["name"], id)
         if "workspace" in host:
             host_manager.send_command(f"cd {host['workspace']}")
         host_managers.append(host_manager)
     print("Connected to remote hosts.")
-    launch_terminal_with_tmux(tmux_session)
+    launch_terminal_with_tmux(session_name)
     while True:
         try:
             command = input(f"(remote) {tmux_session}> ")
