@@ -52,36 +52,35 @@ class HostManager:
 
 def build_dockerfile(
     base_image: str = "ubuntu:latest",
-    system_dep: list = "",
+    system_dep: list = [],
     project_root: str = "/",
     user_id: int = 1000,
     group_id: int = 1000,
 ):
-    return f'''
-    FROM {base_image}
+    return f'''FROM {base_image}
 
-    SHELL ["/bin/bash", "-c"]
+SHELL ["/bin/bash", "-c"]
 
-    ENV LANG=C.UTF-8
-    ENV LC_ALL=C.UTF-8
-    ENV DEBIAN_FRONTEND=noninteractive
-    RUN apt-get update && \
-        apt-get install -y --no-install-recommends \
-        software-properties-common && \
-        add-apt-repository universe && \
-        apt-get update 
-    RUN apt-get install -y --no-install-recommends \
-        sudo {' '.join(system_dep)} && \
-        rm -rf /var/lib/apt/lists/*
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    software-properties-common && \
+    add-apt-repository universe && \
+    apt-get update 
+RUN apt-get install -y --no-install-recommends \
+    sudo {' '.join(system_dep)} && \
+    rm -rf /var/lib/apt/lists/*
 
-    # Add a new user with the same user id as the host user
-    RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos "" --uid {user_id} --gid {group_id} docki
-    
-    RUN mkdir -p /.local; chmod -R 777 /.local
-    ENV HOME={project_root}/tmp
-    # Where pytorch will save parameters from pretrained networks
-    ENV XDG_CACHE_HOME={project_root}/tmp
-    '''
+# Add a new user with the same user id as the host user
+RUN groupadd -g {group_id} docki && useradd -m -s /bin/bash -u {user_id} -g {group_id} docki
+
+RUN mkdir -p /.local; chmod -R 777 /.local
+ENV HOME={project_root}/tmp
+# Where pytorch will save parameters from pretrained networks
+ENV XDG_CACHE_HOME={project_root}/tmp
+'''
 
 
 def docki_examples1():
