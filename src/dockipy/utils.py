@@ -207,7 +207,7 @@ def docki_remote(docki_config):
     launch_terminal_with_tmux(session_name)
     while True:
         try:
-            command = input(f"(remote) {tmux_session}> ")
+            command = input(f"(remote) {session_name}> ")
             if command == "exit":
                 break
             for manager in host_managers:
