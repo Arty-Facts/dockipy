@@ -296,7 +296,7 @@ def get_user():
         return "1000:1000" 
 
 
-def build_docker_image(project_root, config):
+def build_docker_image(project_root, config, clean=False):
     base_image = config.get("base_image")
     system_dep = config.get("system_dep")
     tag = config.get("tag", "docki_image")
@@ -306,12 +306,13 @@ def build_docker_image(project_root, config):
     dockerfile = build_dockerfile(base_image, system_dep, project_root, uid, gid)
     client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")
+    # if clean no-cache as a build argument
     image, build_log = client.images.build(
         fileobj=BytesIO(dockerfile.encode('utf-8')), 
         tag=tag, 
         rm=True,
         network_mode="host",
-
+        buildargs={"NO_CACHE": clean}
     )
     for key, value in list(build_log)[-1].items():
         print(value, end="")
@@ -411,6 +412,7 @@ usage:
 """
 def argsparse():
     remote = False
+    clean = False
     args = sys.argv
     if len(args) == 1:
         print(help)
@@ -424,8 +426,21 @@ def argsparse():
     if args[1] == "--remote":
         remote = True
         args = args[1:]
+    if args[1] == "--clean":
+        clean = True
+        args = args[1:]
     command = args[1:]
-    return command, remote
+    return command, remote, clean
+
+def remove_venv(project_root):
+    if pathlib.Path(f"{project_root}/venv").exists():
+        if platform.system() == "Windows":
+            subprocess.run(f"rd /s /q {project_root}/venv", shell=True)
+        elif platform.system() == "Linux":
+            subprocess.run(f"rm -rf {project_root}/venv", shell=True)
+        else:
+            print("remove the venv folder manually and try again")
+            exit(1)
 
 
 def dockikill():
