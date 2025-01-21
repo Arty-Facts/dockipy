@@ -63,10 +63,11 @@ ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    software-properties-common && \
-    add-apt-repository universe && \
-    apt-get update 
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository -y universe && \
+    apt-get update && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 RUN apt-get install -y --no-install-recommends \
     sudo {' '.join(system_dep)} && \
     rm -rf /var/lib/apt/lists/*
