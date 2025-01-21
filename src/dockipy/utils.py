@@ -472,9 +472,30 @@ def dockistop():
 
 def dockiprune():
     # Prune the Docker system images, volumes, networks, and containers
+    freed_space = 0
     client = docker.from_env()
-    client.containers.prune()
-    client.images.prune()
-    client.volumes.prune()
-    client.networks.prune()
-    print("Docker system has been pruned.")
+    # Prune the containers
+    containers = client.containers.prune()
+    freed_space_containers += containers.get("SpaceReclaimed", 0)
+    print(f"Freed {freed_space_containers} bytes of disk space.")
+    freed_space += freed_space_containers
+
+    # Prune the images
+    images = client.images.prune()
+    freed_space_images = images.get("SpaceReclaimed", 0)
+    print(f"Freed {freed_space_images} bytes of disk space.")
+    freed_space += freed_space_images
+
+    # Prune the volumes
+    volumes = client.volumes.prune()
+    freed_space_volumes = volumes.get("SpaceReclaimed", 0)
+    print(f"Freed {freed_space_volumes} bytes of disk space.")
+    freed_space += freed_space_volumes
+
+    # Prune the networks
+    networks = client.networks.prune()
+    freed_space_networks = networks.get("SpaceReclaimed", 0)
+    print(f"Freed {freed_space_networks} bytes of disk space.")
+    freed_space += freed_space_networks
+
+    print(f"Freed {freed_space} bytes of disk space. (hopefully nobody was using it!)")
