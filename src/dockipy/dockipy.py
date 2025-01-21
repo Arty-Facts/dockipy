@@ -5,9 +5,6 @@ def dockipy():
 
     command, remote, clean = utils.argsparse()
 
-    if clean:
-        utils.remove_venv(project_root)
-
     docki_config = utils.get_docki_config(project_root, remote)
 
     image, client = utils.build_docker_image(target_root, docki_config, clean)

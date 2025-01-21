@@ -351,7 +351,7 @@ def run_container(client, image, command, config, work_dir, project_root, target
                                         )
     return container
 
-def setup_venv(project_root, target_root, client, image, config):
+def setup_venv(project_root, target_root, client, image, config, clean=False):
     python_dep = config.get("python_dep")
     base_image = config.get("base_image")
     tag = config.get("tag")
@@ -431,17 +431,6 @@ def argsparse():
         args = args[1:]
     command = args[1:]
     return command, remote, clean
-
-def remove_venv(project_root):
-    if pathlib.Path(f"{project_root}/venv").exists():
-        if platform.system() == "Windows":
-            subprocess.run(f"rd /s /q {project_root}/venv", shell=True)
-        elif platform.system() == "Linux":
-            subprocess.run(f"rm -rf {project_root}/venv", shell=True)
-        else:
-            print("remove the venv folder manually and try again")
-            exit(1)
-
 
 def dockikill():
     work_dir, project_root, target_root = find_project_root()
