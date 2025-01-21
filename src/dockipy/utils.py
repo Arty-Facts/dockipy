@@ -468,3 +468,13 @@ def dockistop():
         print(f"No container with the name {tag} found.")
     except docker.errors.APIError as e:
         print(f"An error occurred: {str(e)}")
+
+
+def dockiprune():
+    # Prune the Docker system images, volumes, networks, and containers
+    client = docker.from_env()
+    client.containers.prune()
+    client.images.prune()
+    client.volumes.prune()
+    client.networks.prune()
+    print("Docker system has been pruned.")

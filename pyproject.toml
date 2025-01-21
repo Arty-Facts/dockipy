@@ -84,6 +84,7 @@ dockistop = "dockipy.utils:dockistop"
 docki = "dockipy.utils:docki"
 envipy = "dockipy.envipy:envipy"
 envibook = "dockipy.envibook:envibook"
+dockiprune = "dockipy.utils:dockiprune"
 
 [tool.coverage.report]
 exclude_lines = [
