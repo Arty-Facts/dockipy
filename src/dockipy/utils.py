@@ -52,11 +52,9 @@ def build_dockerfile(
 ):
     return f'''FROM {base_image}
 
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-ENV DEBIAN_FRONTEND=noninteractive
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-SHELL ["/bin/bash", "-c"]
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository -y universe  
@@ -67,13 +65,20 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Add a new user with the same user id as the host user
-RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos "" --uid {user_id} --gid {group_id} docki
+# Create group and user non-interactively
+RUN groupadd --gid {group_id} docki \
+ && useradd --uid {user_id} --gid {group_id} \
+    --create-home --shell /bin/bash docki \
+ && usermod -aG sudo docki \
+ && echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 
 RUN mkdir -p /.local; chmod -R 777 /.local
 ENV HOME={project_root}/tmp
 # Where pytorch will save parameters from pretrained networks
 ENV XDG_CACHE_HOME={project_root}/tmp
+
+CMD ["/bin/bash"]
 '''
 
 
