@@ -304,7 +304,7 @@ def get_user():
         return "1000:1000" 
 
 
-def build_docker_image(project_root, config, clean=False):
+def build_docker_image(project_root, config, clean=False, output=False):
     base_image = config.get("base_image")
     system_dep = config.get("system_dep")
     tag = config.get("tag", "docki_image")
@@ -312,6 +312,10 @@ def build_docker_image(project_root, config, clean=False):
     if ":latest" not in tag:
         tag += ":latest"
     dockerfile = build_dockerfile(base_image, system_dep, project_root, uid, gid)
+    if output:
+        with open("Dockerfile", "w") as f:
+            f.write(dockerfile)
+            exit(0)
     client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")
     # if clean no-cache as a build argument
@@ -421,6 +425,7 @@ usage:
 def argsparse():
     remote = False
     clean = False
+    output = False
     args = sys.argv
     if len(args) == 1:
         print(help)
@@ -437,8 +442,11 @@ def argsparse():
     if args[1] == "--clean":
         clean = True
         args = args[1:]
+    if args[1] == "--output":
+        output = True
+        args = args[1:]
     command = args[1:]
-    return command, remote, clean
+    return command, remote, clean, output
 
 def dockikill():
     work_dir, project_root, target_root = find_project_root()

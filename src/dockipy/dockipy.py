@@ -3,11 +3,11 @@ import dockipy.utils as utils
 def dockipy():
     work_dir, project_root, target_root = utils.find_project_root()
 
-    command, remote, clean = utils.argsparse()
+    command, remote, clean, output = utils.argsparse()
 
     docki_config = utils.get_docki_config(project_root, remote)
 
-    image, client = utils.build_docker_image(target_root, docki_config, clean)
+    image, client = utils.build_docker_image(target_root, docki_config, clean, output)
     
     command = [f"{target_root}/venv/bin/python3"] + command
     try:
