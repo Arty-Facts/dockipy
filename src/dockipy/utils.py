@@ -59,8 +59,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository -y universe && \
-    apt-get update 
+    add-apt-repository -y universe  
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     sudo {' '.join(system_dep)} && \
@@ -68,7 +68,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Add a new user with the same user id as the host user
-RUN groupadd -g {group_id} docki && useradd -m -s /bin/bash -u {user_id} -g {group_id} docki
+RUN groupadd -g {group_id} docki && adduser --disabled-password --gecos "" --uid {user_id} --gid {group_id} docki
 
 RUN mkdir -p /.local; chmod -R 777 /.local
 ENV HOME={project_root}/tmp
