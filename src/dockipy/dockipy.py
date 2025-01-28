@@ -22,5 +22,6 @@ def dockipy():
     except Exception as e:
         print(e)
     finally:
-        container.stop()
-        container.remove(force=True)
+        if not output:
+            container.stop()
+            container.remove(force=True)
