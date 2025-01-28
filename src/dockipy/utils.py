@@ -352,7 +352,7 @@ def run_container(client, image, command, config, work_dir, project_root, target
         volume_str = " ".join([f"-v {key}:{value['bind']}" for key, value in volumes.items()])
         if volume_str != "":
             volume_str += "-v "
-        start_docker = f"docker run -it --rm --shm-size={shm_size} --network=host --user {user} {volume_str} -w {target_root} --runtime={runtime} --name {tag} {image.id} /bin/bash"
+        start_docker = f"docker run -it --rm --shm-size={shm_size} --network=host --user {user} {volume_str} -w {target_root} --runtime={runtime} {tag} /bin/bash"
         with open("start.sh", "w") as f:
             f.write(start_docker)
 
@@ -395,7 +395,6 @@ def setup_venv(project_root, target_root, client, image, config, clean=False, ou
     if docki_lock_file.exists():
         locked_python_dep = yaml.safe_load(docki_lock_file.read_text()).get("python_dep")
     if set(locked_python_dep) != set(python_dep) or output:
-        print("Building the virtual environment and installing the requirements...")
         volumes = get_volumes(project_root, target_root)
         user = get_user()
         runtime = get_runtime(base_image)
@@ -403,6 +402,7 @@ def setup_venv(project_root, target_root, client, image, config, clean=False, ou
             with open("seup_venv.sh", "w") as f:
                 f.write(f'python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}')
             return
+        print("Building the virtual environment and installing the requirements...")
         container = client.containers.run(image,
                                             f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}"',
                                             stdout=True,
