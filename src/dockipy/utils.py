@@ -347,7 +347,8 @@ def run_container(client, image, command, config, work_dir, project_root, target
     command = f'bash -c "{command}"'
     if output:
         with open("run.sh", "w") as f:
-            f.write(command)
+            work_dir = f"cd {work_dir}"
+            f.write(f"{work_dir}; {command}")
         volume_str = " ".join([f"-v {key}:{value['bind']}" for key, value in volumes.items()])
         if volume_str != "":
             volume_str += "-v "
