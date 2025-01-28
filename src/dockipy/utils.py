@@ -315,7 +315,7 @@ def build_docker_image(project_root, config, clean=False, output=False):
     if output:
         with open("Dockerfile", "w") as f:
             f.write(dockerfile)
-            exit(0)
+        return None, None
     client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")
     # if clean no-cache as a build argument
@@ -330,7 +330,7 @@ def build_docker_image(project_root, config, clean=False, output=False):
         print(value, end="")
     return image, client
 
-def run_container(client, image, command, config, work_dir, project_root, target_root):
+def run_container(client, image, command, config, work_dir, project_root, target_root, output=False):
     shm_size = config.get("shm_size", "16G")
     base_image = config["base_image"]
     tag = config.get("tag")
@@ -343,7 +343,17 @@ def run_container(client, image, command, config, work_dir, project_root, target
     command = ' '.join(command)
     command = f'export PATH={target_root}/venv/bin:$PATH; {command}'
     command = f'bash -c "{command}"'
+    if output:
+        with open("run.sh", "w") as f:
+            f.write(command)
+        volume_str = " ".join([f"-v {key}:{value['bind']}" for key, value in volumes.items()])
+        if volume_str != "":
+            volume_str += "-v "
+        start_docker = f"docker run -it --rm --shm-size={shm_size} --network=host --user {user} {volume_str} -w {target_root} --runtime={runtime} --name {tag} {image.id} /bin/bash"
+        with open("start.sh", "w") as f:
+            f.write(start_docker)
 
+        return None
     # Run a container from the image
     container = client.containers.run(image, 
                                         command,
@@ -363,7 +373,7 @@ def run_container(client, image, command, config, work_dir, project_root, target
                                         )
     return container
 
-def setup_venv(project_root, target_root, client, image, config, clean=False):
+def setup_venv(project_root, target_root, client, image, config, clean=False, output=False):
     python_dep = config.get("python_dep")
     base_image = config.get("base_image")
     tag = config.get("tag")
@@ -381,11 +391,15 @@ def setup_venv(project_root, target_root, client, image, config, clean=False):
     locked_python_dep = []
     if docki_lock_file.exists():
         locked_python_dep = yaml.safe_load(docki_lock_file.read_text()).get("python_dep")
-    if set(locked_python_dep) != set(python_dep):
+    if set(locked_python_dep) != set(python_dep) or output:
         print("Building the virtual environment and installing the requirements...")
         volumes = get_volumes(project_root, target_root)
         user = get_user()
         runtime = get_runtime(base_image)
+        if output:
+            with open("seup_venv.sh", "w") as f:
+                f.write(f'python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}')
+            return
         container = client.containers.run(image,
                                             f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}"',
                                             stdout=True,

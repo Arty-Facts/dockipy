@@ -11,8 +11,10 @@ def dockishell():
     image, client = utils.build_docker_image(target_root, docki_config, clean, output)
 
     try:
-        utils.setup_venv(project_root, target_root, client, image, docki_config, clean)
-        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root)
+        utils.setup_venv(project_root, target_root, client, image, docki_config, clean, output)
+        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
+        if output:
+            exit(0)
         utils.print_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")

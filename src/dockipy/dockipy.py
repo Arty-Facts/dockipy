@@ -11,9 +11,11 @@ def dockipy():
     
     command = [f"{target_root}/venv/bin/python3"] + command
     try:
-        utils.setup_venv(project_root, target_root, client, image, docki_config, clean)
+        utils.setup_venv(project_root, target_root, client, image, docki_config, clean, output)
         # Run a container from the image
-        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root)
+        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
+        if output:
+            exit(0)
         utils.print_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")
