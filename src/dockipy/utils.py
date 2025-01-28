@@ -315,6 +315,8 @@ def build_docker_image(project_root, config, clean=False, output=False):
     if output:
         with open("Dockerfile", "w") as f:
             f.write(dockerfile)
+        with open("build.sh", "w") as f:
+            f.write(f"docker build -t {tag} .")
         return None, None
     client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")

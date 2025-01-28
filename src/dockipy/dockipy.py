@@ -15,7 +15,7 @@ def dockipy():
         # Run a container from the image
         container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
         if output:
-            exit(0)
+            return
         utils.print_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")

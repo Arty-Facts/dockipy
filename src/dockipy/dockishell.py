@@ -14,7 +14,7 @@ def dockishell():
         utils.setup_venv(project_root, target_root, client, image, docki_config, clean, output)
         container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
         if output:
-            exit(0)
+            return
         utils.print_logs(container)
     except KeyboardInterrupt:
         print("Shutting down the container")
