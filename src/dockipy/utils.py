@@ -66,20 +66,20 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 
-RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
-    sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
-    sed -i 's/^\(shadow:\).*/\1 files/' /etc/nsswitch.conf
+# RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
+#     sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
+#     sed -i 's/^\(shadow:\).*/\1 files/' /etc/nsswitch.conf
 
-# lets make sure the user id and group id can be set to a high value
-RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
-    sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
+# # lets make sure the user id and group id can be set to a high value
+# RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
+#     sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
 
 
-# Create group and user non-interactively
-RUN groupadd --gid {group_id} --force docki
-RUN adduser --uid {user_id} --gid {group_id} --no-create-home --shell /bin/bash --disabled-password --gecos "" docki 
-RUN usermod -aG sudo docki 
-RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# # Create group and user non-interactively
+# RUN groupadd --gid {group_id} --force docki
+# RUN adduser --uid {user_id} --gid {group_id} --no-create-home --shell /bin/bash --disabled-password --gecos "" docki 
+# RUN usermod -aG sudo docki 
+# RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 
 RUN mkdir -p /.local; chmod -R 777 /.local
