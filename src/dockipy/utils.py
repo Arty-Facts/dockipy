@@ -64,9 +64,14 @@ RUN apt-get update && \
     sudo {' '.join(system_dep)} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+RUN cat /etc/login.defs
+
 # lets make sure the user id and group id can be set to a high value
 RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
     sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
+
+RUN cat /etc/login.defs
 
 # Create group and user non-interactively
 RUN groupadd --gid {group_id} --force docki \
