@@ -547,11 +547,4 @@ def dockiprune():
     print(f"Build cache: Freed {freed_space_build_cache:.2f} GB of disk space.")
     freed_space += freed_space_build_cache
 
-    # Prune the system
-    system = client.api.prune_system()
-    freed_space_system = system.get("SpaceReclaimed", 0) / to_gb
-    print(f"System: Freed {freed_space_system:.2f} GB of disk space.")
-    freed_space += freed_space_system
-
-
     print(f"Total: Freed {freed_space:.2f} GB of disk space. (hopefully nobody was using it!)")
