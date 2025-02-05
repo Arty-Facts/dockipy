@@ -334,7 +334,8 @@ def build_docker_image(project_root, config, clean=False, output=False):
     # pathlib.Path("/tmp/docki").mkdir(parents=True, exist_ok=True)
     cmd = ["docker", "builder", "build", "-t", tag, "-"]
     if clean:
-        cmd.insert(2, "--no-cache")
+        cmd.insert(3, "--no-cache")
+    print(f"Running the command: {' '.join(cmd)}")
     result = subprocess.run(
       cmd,
       input=dockerfile,
