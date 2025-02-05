@@ -65,19 +65,21 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN cat /etc/login.defs
+
+RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
+    sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
+    sed -i 's/^\(shadow:\).*/\1 files/' /etc/nsswitch.conf
 
 # lets make sure the user id and group id can be set to a high value
 RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
     sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
 
-RUN cat /etc/login.defs
 
 # Create group and user non-interactively
-RUN groupadd --gid {group_id} --force docki \
- && useradd --uid {user_id} --gid {group_id} -o --shell /bin/bash docki \
- && usermod -aG sudo docki \
- && echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+RUN groupadd --verbose  --gid {group_id} --force docki
+RUN useradd --verbose  --uid {user_id} --gid {group_id} -o --shell /bin/bash docki 
+RUN usermod -aG sudo docki 
+RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 
 RUN mkdir -p /.local; chmod -R 777 /.local
