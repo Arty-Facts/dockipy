@@ -77,7 +77,7 @@ RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
 
 # Create group and user non-interactively
 RUN groupadd --gid {group_id} --force docki
-RUN useradd --uid {user_id} --gid {group_id} --shell /bin/bash docki 
+RUN adduser --uid {user_id} --gid {group_id} --shell /bin/bash --disabled-password --gecos "" docki 
 RUN usermod -aG sudo docki 
 RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
