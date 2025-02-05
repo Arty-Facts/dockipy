@@ -66,9 +66,8 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create group and user non-interactively
-RUN groupadd --gid {group_id} docki \
- && useradd --uid {user_id} --gid {group_id} \
-    --create-home --shell /bin/bash docki \
+RUN groupadd --gid {group_id} --force docki \
+ && useradd --uid {user_id} --gid {group_id} -o --shell /bin/bash docki \
  && usermod -aG sudo docki \
  && echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
@@ -316,23 +315,31 @@ def build_docker_image(project_root, config, clean=False, output=False):
         with open("Dockerfile", "w") as f:
             f.write(dockerfile)
         with open("build.sh", "w") as f:
-            f.write(f"docker build -t {tag} .")
+            if clean:
+                f.write(f"docker bulder build --no-cache -t {tag} - < Dockerfile")
+            else:
+                f.write(f"docker bulder build -t {tag} - < Dockerfile")
         return None, None
-    client = docker.from_env()
     print(f"Building the Docker image based on {base_image}...")
-    # if clean no-cache as a build argument
-    image, build_log = client.images.build(
-        fileobj=BytesIO(dockerfile.encode('utf-8')), 
-        tag=tag, 
-        rm=True,
-        network_mode="host",
-        nocache=clean,
-    )
-    for key, value in list(build_log)[-1].items():
-        print(value, end="")
-    return image, client
+    # pathlib.Path("/tmp/docki").mkdir(parents=True, exist_ok=True)
+    cmd = ["docker", "builder", "build", "-t", tag, "-"]
+    if clean:
+        cmd.insert(2, "--no-cache")
+    result = subprocess.run(
+      cmd,
+      input=dockerfile,
+      text=True,          # Treat input and output as text.
+      stdout=sys.stdout,  # Stream stdout to the terminal.
+      stderr=sys.stderr   # Stream stderr to the terminal.
+      )
+    if result.returncode != 0:
+        print(f"An error occurred: {result.stderr}")
+        exit(1)
+    print(f"Image {tag} has been built.")
 
-def run_container(client, image, command, config, work_dir, project_root, target_root, output=False):
+    return tag
+
+def run_container(tag, command, config, work_dir, project_root, target_root, output=False):
     shm_size = config.get("shm_size", "16G")
     base_image = config["base_image"]
     tag = config.get("tag")
@@ -358,7 +365,9 @@ def run_container(client, image, command, config, work_dir, project_root, target
 
         return None
     # Run a container from the image
-    container = client.containers.run(image, 
+    client = docker.from_env()
+
+    container = client.containers.run(tag, 
                                         command,
                                         stdin_open=True,
                                         stdout=True,
@@ -376,7 +385,7 @@ def run_container(client, image, command, config, work_dir, project_root, target
                                         )
     return container
 
-def setup_venv(project_root, target_root, client, image, config, clean=False, output=False):
+def setup_venv(project_root, target_root, tag, config, clean=False, output=False):
     python_dep = config.get("python_dep")
     base_image = config.get("base_image")
     tag = config.get("tag")
@@ -403,7 +412,9 @@ def setup_venv(project_root, target_root, client, image, config, clean=False, ou
                 f.write(f'python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}')
             return
         print("Building the virtual environment and installing the requirements...")
-        container = client.containers.run(image,
+        client = docker.from_env()
+
+        container = client.containers.run(tag,
                                             f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}"',
                                             stdout=True,
                                             stderr=True,

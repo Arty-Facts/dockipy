@@ -7,13 +7,13 @@ def dockipy():
 
     docki_config = utils.get_docki_config(project_root, remote)
 
-    image, client = utils.build_docker_image(target_root, docki_config, clean, output)
+    tag = utils.build_docker_image(target_root, docki_config, clean, output)
     
     command = [f"{target_root}/venv/bin/python3"] + command
     try:
-        utils.setup_venv(project_root, target_root, client, image, docki_config, clean, output)
+        utils.setup_venv(project_root, target_root, tag, docki_config, clean, output)
         # Run a container from the image
-        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
+        container = utils.run_container(tag, command, docki_config, work_dir, project_root, target_root, output)
         if output:
             return
         utils.print_logs(container)

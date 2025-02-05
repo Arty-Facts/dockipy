@@ -13,7 +13,7 @@ def dockibook():
     password = docki_config.get("notebook_password", "docki")
     notebook_args = docki_config.get("notebook_args", "")
     
-    image, client = utils.build_docker_image(target_root, docki_config, clean, output)
+    tag = utils.build_docker_image(target_root, docki_config, clean, output)
 
     command = [f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
     f" --ServerApp.token='{token}'"+\
@@ -21,9 +21,9 @@ def dockibook():
     f" --ServerApp.root_dir='{work_dir}/'"] + command
 
     try:
-        utils.setup_venv(project_root, target_root, client, image, docki_config, clean, output)
+        utils.setup_venv(project_root, target_root, tag, docki_config, clean, output)
         # Run a container from the image
-        container = utils.run_container(client, image, command, docki_config, work_dir, project_root, target_root, output)
+        container = utils.run_container(tag, command, docki_config, work_dir, project_root, target_root, output)
         if output:
             return
         utils.print_logs(container)
