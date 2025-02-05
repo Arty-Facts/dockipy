@@ -65,23 +65,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
-# RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
-#     sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
-#     sed -i 's/^\(shadow:\).*/\1 files/' /etc/nsswitch.conf
-
-# # lets make sure the user id and group id can be set to a high value
-# RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
-#     sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
-
-
-# # Create group and user non-interactively
-# RUN groupadd --gid {group_id} --force docki
-# RUN adduser --uid {user_id} --gid {group_id} --no-create-home --shell /bin/bash --disabled-password --gecos "" docki 
-# RUN usermod -aG sudo docki 
-# RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
-
 RUN mkdir -p /.local; chmod -R 777 /.local
 ENV HOME={project_root}/tmp
 # Where pytorch will save parameters from pretrained networks
@@ -557,5 +540,18 @@ def dockiprune():
     freed_space_networks = networks.get("SpaceReclaimed", 0) / to_gb
     print(f"Networks: Freed {freed_space_networks:.2f} GB of disk space.")
     freed_space += freed_space_networks
+
+    # Prune the build cache
+    build_cache = client.api.prune_builds()
+    freed_space_build_cache = build_cache.get("SpaceReclaimed", 0) / to_gb
+    print(f"Build cache: Freed {freed_space_build_cache:.2f} GB of disk space.")
+    freed_space += freed_space_build_cache
+
+    # Prune the system
+    system = client.api.prune_system()
+    freed_space_system = system.get("SpaceReclaimed", 0) / to_gb
+    print(f"System: Freed {freed_space_system:.2f} GB of disk space.")
+    freed_space += freed_space_system
+
 
     print(f"Total: Freed {freed_space:.2f} GB of disk space. (hopefully nobody was using it!)")
