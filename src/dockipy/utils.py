@@ -341,11 +341,12 @@ def build_docker_image(project_root, config, clean=False, output=False):
       cmd,
       input=dockerfile,
       text=True,          # Treat input and output as text.
-      stdout=sys.stdout,  # Stream stdout to the terminal.
-      stderr=sys.stderr   # Stream stderr to the terminal.
       )
     if result.returncode != 0:
-        print(f"An error occurred: {result.stderr}")
+        print("An error occurred while building the image:")
+        print(result.stdout)
+        print("Error message:")
+        print(result.stderr)
         exit(1)
     print(f"Image {tag} has been built.")
 
