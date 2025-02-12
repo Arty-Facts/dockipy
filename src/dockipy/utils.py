@@ -341,6 +341,7 @@ def build_docker_image(project_root, config, clean=False, output=False):
       cmd,
       input=dockerfile,
       text=True,          # Treat input and output as text.
+      capture_output=True,  # Capture the output.
       )
     if result.returncode != 0:
         print("An error occurred while building the image:")
