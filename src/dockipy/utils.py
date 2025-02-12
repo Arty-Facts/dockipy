@@ -102,7 +102,7 @@ system_dep:
   - python3-venv
 python_dep:
   file: ./requirements.txt
-start_commands:
+init_commands:
     - export ENV_VAR=VALUE
 notebook_token: docki
 notebook_password: docki
@@ -355,15 +355,18 @@ def run_container(tag, command, config, work_dir, project_root, target_root, out
     shm_size = config.get("shm_size", "16G")
     base_image = config["base_image"]
     tag = config.get("tag")
-    start_commands = config.get("start_commands", [])
+    init_commands = config.get("init_commands", [])
 
     volumes = get_volumes(project_root, target_root)
     user = get_user()
     runtime = get_runtime(base_image)
-    start_commands_str = "; ".join(start_commands)
+    if len(init_commands) > 0:
+        init_commands_str = "; ".join(init_commands) + "; " 
+    else:
+        init_commands_str = ""
     # add venv/bin to PATH
     command = ' '.join(command)
-    command = f'export PATH={target_root}/venv/bin:$PATH; {start_commands_str} ; {command}'
+    command = f'export PATH={target_root}/venv/bin:$PATH; {init_commands_str} {command}'
     command = f'bash -c "{command}"'
     if output:
         with open("run.sh", "w") as f:
