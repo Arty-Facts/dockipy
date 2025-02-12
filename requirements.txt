@@ -1,3 +1,4 @@
 docker
 PyYAML
+typing-extensions
 libtmux

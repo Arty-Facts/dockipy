@@ -52,28 +52,41 @@ def build_dockerfile(
 ):
     return f'''FROM {base_image}
 
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-ENV DEBIAN_FRONTEND=noninteractive
+# Avoid interactive prompts
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 
-SHELL ["/bin/bash", "-c"]
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
-    add-apt-repository -y universe && \
-    apt-get update 
+    add-apt-repository -y universe  
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     sudo {' '.join(system_dep)} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+# if needed to add user and group
+# RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
+#     sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
+#     sed -i 's/^\(shadow:\).*/\1 files/' /etc/nsswitch.conf
 
-# Add a new user with the same user id as the host user
-RUN groupadd -g {group_id} docki && useradd -m -s /bin/bash -u {user_id} -g {group_id} docki
+# # lets make sure the user id and group id can be set to a high value
+# RUN sed -i 's/^UID_MAX.*/UID_MAX 4294967295/' /etc/login.defs && \
+#     sed -i 's/^GID_MAX.*/GID_MAX 4294967295/' /etc/login.defs
+
+
+# # Create group and user non-interactively
+# RUN groupadd --gid {group_id} --force docki
+# RUN adduser --uid {user_id} --gid {group_id} --no-create-home --shell /bin/bash --disabled-password --gecos "" docki 
+# RUN usermod -aG sudo docki 
+# RUN echo "docki ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
 
 RUN mkdir -p /.local; chmod -R 777 /.local
 ENV HOME={project_root}/tmp
 # Where pytorch will save parameters from pretrained networks
 ENV XDG_CACHE_HOME={project_root}/tmp
+
+CMD ["/bin/bash"]
 '''
 
 
@@ -301,7 +314,7 @@ def get_user():
         return "1000:1000" 
 
 
-def build_docker_image(project_root, config, clean=False):
+def build_docker_image(project_root, config, clean=False, output=False):
     base_image = config.get("base_image")
     system_dep = config.get("system_dep")
     tag = config.get("tag", "docki_image")
@@ -309,21 +322,36 @@ def build_docker_image(project_root, config, clean=False):
     if ":latest" not in tag:
         tag += ":latest"
     dockerfile = build_dockerfile(base_image, system_dep, project_root, uid, gid)
-    client = docker.from_env()
+    if output:
+        with open("Dockerfile", "w") as f:
+            f.write(dockerfile)
+        with open("build.sh", "w") as f:
+            if clean:
+                f.write(f"docker bulder build --no-cache -t {tag} - < Dockerfile")
+            else:
+                f.write(f"docker bulder build -t {tag} - < Dockerfile")
+        return None, None
     print(f"Building the Docker image based on {base_image}...")
-    # if clean no-cache as a build argument
-    image, build_log = client.images.build(
-        fileobj=BytesIO(dockerfile.encode('utf-8')), 
-        tag=tag, 
-        rm=True,
-        network_mode="host",
-        nocache=clean,
-    )
-    for key, value in list(build_log)[-1].items():
-        print(value, end="")
-    return image, client
+    # pathlib.Path("/tmp/docki").mkdir(parents=True, exist_ok=True)
+    cmd = ["docker", "builder", "build", "-t", tag, "-"]
+    if clean:
+        cmd.insert(3, "--no-cache")
+    print(f"Running the command: {' '.join(cmd)}")
+    result = subprocess.run(
+      cmd,
+      input=dockerfile,
+      text=True,          # Treat input and output as text.
+      stdout=sys.stdout,  # Stream stdout to the terminal.
+      stderr=sys.stderr   # Stream stderr to the terminal.
+      )
+    if result.returncode != 0:
+        print(f"An error occurred: {result.stderr}")
+        exit(1)
+    print(f"Image {tag} has been built.")
 
-def run_container(client, image, command, config, work_dir, project_root, target_root):
+    return tag
+
+def run_container(tag, command, config, work_dir, project_root, target_root, output=False):
     shm_size = config.get("shm_size", "16G")
     base_image = config["base_image"]
     tag = config.get("tag")
@@ -337,9 +365,22 @@ def run_container(client, image, command, config, work_dir, project_root, target
     command = ' '.join(command)
     command = f'export PATH={target_root}/venv/bin:$PATH; {start_commands_str} ; {command}'
     command = f'bash -c "{command}"'
+    if output:
+        with open("run.sh", "w") as f:
+            work_dir = f"cd {work_dir}"
+            f.write(f"{work_dir}; {command}")
+        volume_str = " ".join([f"-v {key}:{value['bind']}" for key, value in volumes.items()])
+        if volume_str != "":
+            volume_str += "-v "
+        start_docker = f"docker run -it --rm --shm-size={shm_size} --network=host --user {user} {volume_str} -w {target_root} --runtime={runtime} {tag} /bin/bash"
+        with open("start.sh", "w") as f:
+            f.write(start_docker)
 
+        return None
     # Run a container from the image
-    container = client.containers.run(image, 
+    client = docker.from_env()
+
+    container = client.containers.run(tag, 
                                         command,
                                         stdin_open=True,
                                         stdout=True,
@@ -357,7 +398,7 @@ def run_container(client, image, command, config, work_dir, project_root, target
                                         )
     return container
 
-def setup_venv(project_root, target_root, client, image, config, clean=False):
+def setup_venv(project_root, target_root, tag, config, clean=False, output=False):
     python_dep = config.get("python_dep")
     base_image = config.get("base_image")
     tag = config.get("tag")
@@ -375,12 +416,18 @@ def setup_venv(project_root, target_root, client, image, config, clean=False):
     locked_python_dep = []
     if docki_lock_file.exists():
         locked_python_dep = yaml.safe_load(docki_lock_file.read_text()).get("python_dep")
-    if set(locked_python_dep) != set(python_dep):
-        print("Building the virtual environment and installing the requirements...")
+    if set(locked_python_dep) != set(python_dep) or output:
         volumes = get_volumes(project_root, target_root)
         user = get_user()
         runtime = get_runtime(base_image)
-        container = client.containers.run(image,
+        if output:
+            with open("seup_venv.sh", "w") as f:
+                f.write(f'python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}')
+            return
+        print("Building the virtual environment and installing the requirements...")
+        client = docker.from_env()
+
+        container = client.containers.run(tag,
                                             f'bash -c "python3 -m venv {target_root}/venv; {target_root}/venv/bin/pip install {requirements_cmd}"',
                                             stdout=True,
                                             stderr=True,
@@ -419,6 +466,7 @@ usage:
 def argsparse():
     remote = False
     clean = False
+    output = False
     args = sys.argv
     if len(args) == 1:
         print(help)
@@ -435,8 +483,11 @@ def argsparse():
     if args[1] == "--clean":
         clean = True
         args = args[1:]
+    if args[1] == "--output":
+        output = True
+        args = args[1:]
     command = args[1:]
-    return command, remote, clean
+    return command, remote, clean, output
 
 def dockikill():
     work_dir, project_root, target_root = find_project_root()
@@ -508,5 +559,11 @@ def dockiprune():
     freed_space_networks = networks.get("SpaceReclaimed", 0) / to_gb
     print(f"Networks: Freed {freed_space_networks:.2f} GB of disk space.")
     freed_space += freed_space_networks
+
+    # Prune the build cache
+    build_cache = client.api.prune_builds()
+    freed_space_build_cache = build_cache.get("SpaceReclaimed", 0) / to_gb
+    print(f"Build cache: Freed {freed_space_build_cache:.2f} GB of disk space.")
+    freed_space += freed_space_build_cache
 
     print(f"Total: Freed {freed_space:.2f} GB of disk space. (hopefully nobody was using it!)")
