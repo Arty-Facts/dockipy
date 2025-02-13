@@ -291,8 +291,6 @@ def get_docki_config(project_root, remote=False):
         missing_values.append("base_image")
     if "system_dep" not in docki_config:
         missing_values.append("system_dep")
-    if "python_dep" not in docki_config:
-        missing_values.append("python_dep")
     if remote:
         if "remote" not in docki_config:
             missing_values.append("remote")
@@ -364,12 +362,15 @@ def run_container(tag, command, config, work_dir, project_root, target_root, out
     user = get_user()
     runtime = get_runtime(base_image)
     if len(init_commands) > 0:
-        init_commands_str = "; ".join(init_commands) + "; " 
+        init_commands_str = "&& ".join(init_commands) + "&& " 
     else:
         init_commands_str = ""
     # add venv/bin to PATH
     command = ' '.join(command)
-    command = f'export PATH={target_root}/venv/bin:$PATH; {init_commands_str} {command}'
+    env = ""
+    if "python_dep" in config:
+        env = f'export PATH={target_root}/venv/bin:$PATH &&'
+    command = f'{env} {init_commands_str} {command}'
     command = f'bash -c "{command}"'
     if output:
         with open("run.sh", "w") as f:

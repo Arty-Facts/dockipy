@@ -14,14 +14,20 @@ def dockibook():
     notebook_args = docki_config.get("notebook_args", "")
     
     tag = utils.build_docker_image(target_root, docki_config, clean, output)
-
-    command = [f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
-    f" --ServerApp.token='{token}'"+\
-    f" --ServerApp.password='{password}'"+\
-    f" --ServerApp.root_dir='{work_dir}/'"] + command
+    if "python_dep" in docki_config:
+        command = [f"{target_root}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
+        f" --ServerApp.token='{token}'"+\
+        f" --ServerApp.password='{password}'"+\
+        f" --ServerApp.root_dir='{work_dir}/'"] + command
+    else:
+        command = [f"jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
+        f" --ServerApp.token='{token}'"+\
+        f" --ServerApp.password='{password}'"+\
+        f" --ServerApp.root_dir='{work_dir}/'"] + command
 
     try:
-        utils.setup_venv(project_root, target_root, tag, docki_config, clean, output)
+        if "python_dep" in docki_config:
+            utils.setup_venv(project_root, target_root, tag, docki_config, clean, output)
         # Run a container from the image
         container = utils.run_container(tag, command, docki_config, work_dir, project_root, target_root, output)
         if output:

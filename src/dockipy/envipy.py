@@ -8,6 +8,9 @@ def envipy():
     command, remote, _clean, _output = utils.argsparse()
         
     docki_config = utils.get_docki_config(project_root, remote)
+    if "python_dep" not in docki_config:
+        print("python_dep key not found in docki.yaml")
+        return
 
     project_root = pathlib.Path(project_root)
 
