@@ -46,6 +46,7 @@ class HostManager:
 def build_dockerfile(
     base_image: str = "ubuntu:latest",
     system_dep: list = [],
+    system_commands: list = [],
     project_root: str = "/",
     user_id: int = 1000,
     group_id: int = 1000,
@@ -65,6 +66,9 @@ RUN apt-get update && \
     sudo {' '.join(system_dep)} && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Add system commands
+RUN {' && '.join(system_commands)}
 # if needed to add user and group
 # RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
 #     sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
@@ -101,6 +105,8 @@ system_dep:
   - python3-pip
   - python3-dev
   - python3-venv
+system_commands:
+    - apt-get update
 python_dep:
   file: ./requirements.txt
 init_commands:
@@ -320,7 +326,8 @@ def build_docker_image(project_root, config, clean=False, output=False):
     uid, gid = get_user().split(":")
     if ":latest" not in tag:
         tag += ":latest"
-    dockerfile = build_dockerfile(base_image, system_dep, project_root, uid, gid)
+    system_commands = config.get("system_commands", [])
+    dockerfile = build_dockerfile(base_image, system_dep, system_commands, project_root, uid, gid)
     if output:
         with open("Dockerfile", "w") as f:
             f.write(dockerfile)
