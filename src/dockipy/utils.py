@@ -387,6 +387,8 @@ def run_container(tag, command, config, work_dir, project_root, target_root, out
     # Run a container from the image
     client = docker.from_env()
 
+    print(f"Running the command: {command}")
+
     container = client.containers.run(tag, 
                                         command,
                                         stdin_open=True,
