@@ -45,18 +45,12 @@ def envibook():
         docki_lock_content["python_dep"] = python_dep
         docki_lock_file.write_text(yaml.safe_dump(docki_lock_content))
 
-    token = docki_config.get("notebook_token", "docki")
-    password = docki_config.get("notebook_password", "docki")
     notebook_args = docki_config.get("notebook_args", "")
 
     if platform.system() == "Windows":
-        command = f"{project_root.absolute()}/venv/Scripts/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
-        f" --ServerApp.token='{token}'"+\
-        f" --ServerApp.password='{password}'"+ " ".join(command)
+        command = f"{project_root.absolute()}/venv/Scripts/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+ " ".join(command)
         subprocess.run(command, shell=True)
     else:
-        command = f"{project_root.absolute()}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+\
-        f" --ServerApp.token='{token}'"+\
-        f" --ServerApp.password='{password}'" + " ".join(command)
+        command = f"{project_root.absolute()}/venv/bin/jupyter notebook --no-browser {notebook_args} --ServerApp.allow_origin='*' "+ + " ".join(command)
         subprocess.run(command, shell=True)
 

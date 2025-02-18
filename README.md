@@ -18,6 +18,22 @@
 pip install dockipy
 ```
 
+### For remote access to hosts
+
+```bash
+
+sudo apt install tmux openssh-client 
+```
+
+make sure you have ssh keys setup for the remote hosts. 
+
+```bash
+ssh-keygen 
+
+ssh-copy-id username@host
+```
+
+
 ## What is `dockipy`?
 
 `dockipy` is your ticket to productivity paradise, a simple yet mighty wrapper around the Docker command line interface. It's the friend who says, "Don't worry about the nitty-gritty, I got you!" Just lean back and let dockipy work its magic, it will mount you project in a container seamlessly. If it doesn't break then everything should be fine.
@@ -79,36 +95,46 @@ system_dep: A list of system dependencies to install in the Docker container. In
 python_dep: A list of python dependencies to install in the Docker container or a path to a requirements.txt file.
 
 ```yaml
-base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04
+base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04 # base image for the container can find more on Docker Hub
 shm_size: 16G # shared memory size
-tag: docki_image
-system_dep:
-    - python3
-    - python3-pip
-    - python3-dev
-    - python3-venv
-python_dep:
-    - jupyter
-notebook_token: docki
-notebook_password: docki
+tag: docki # name of the container
+system_dep: # list of system dependencies to install during the build
+  - python3
+  - python3-pip
+  - python3-dev
+  - python3-venv
+system_commands: # list of system commands to run after installing system dependencies during the build
+    - apt-get update
+python_dep: # list or file of python dependencies to install
+  file: ./requirements.txt
+init_commands: # this will be run before as initial as you start the container
+    - export ENV_VAR=VALUE
+remote:
+  hosts:
+    - name: username@host1
+    - name: username@host2
+      workspace: /path/to/workspace
 ```
 
-or 
+## Remote access to Hosts
+
+You can add remote hosts to the docki.yaml file. This will allow you to run the container on a remote host. The workspace is the path to the project on the remote host. 
 
 ```yaml
-base_image: ubuntu:latest
-shm_size: 16G # shared memory size
-tag: docki_image
-system_dep:
-    - python3
-    - python3-pip
-    - python3-dev
-    - python3-venv
-python_dep:
-    file: ./requirements.txt
-notebook_token: docki
-notebook_password: docki
+remote:
+  hosts:
+    - name: username@host1
+    - name: username@host2
+      workspace: /path/to/workspace
+``` 
+
+### How to run the container on a remote host
+
+```bash
+dockipy --remote 
 ```
+
+```bash
 
 ## Is something went wrong? 
 

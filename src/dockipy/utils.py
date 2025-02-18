@@ -100,27 +100,25 @@ CMD ["/bin/bash"]
 
 def docki_examples1():
     return f'''
-base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04
+base_image: nvidia/cuda:11.8.0-devel-ubuntu22.04 # base image for the container can find more on Docker Hub
 shm_size: 16G # shared memory size
-tag: docki
-system_dep:
+tag: docki # name of the container
+system_dep: # list of system dependencies to install during the build
   - python3
   - python3-pip
   - python3-dev
   - python3-venv
-system_commands:
+system_commands: # list of system commands to run after installing system dependencies during the build
     - apt-get update
-python_dep:
+python_dep: # list or file of python dependencies to install
   file: ./requirements.txt
-init_commands:
+init_commands: # this will be run before as initial as you start the container
     - export ENV_VAR=VALUE
-notebook_token: docki
-notebook_password: docki
-remote:
+remote: # remote connection to hosts use docki --remote to open a remote connection
   hosts:
-    - name: username@host1
+    - name: username@host1 # using ssh username@host1
     - name: username@host2
-      workspace: /path/to/workspace
+      workspace: /path/to/workspace # change to the workspace directory
 '''
 def docki_file_yaml(requirements_exists=False):
     examples1 = docki_examples1()
@@ -296,13 +294,15 @@ def get_docki_config(project_root, remote=False):
     docki_content = docki_file.read_text()
     docki_config = yaml.safe_load(docki_content)
     missing_values = []
-    if "base_image" not in docki_config:
-        missing_values.append("base_image")
-    if "system_dep" not in docki_config:
-        missing_values.append("system_dep")
     if remote:
         if "remote" not in docki_config:
             missing_values.append("remote")
+    else:
+        if "base_image" not in docki_config:
+            missing_values.append("base_image")
+        if "system_dep" not in docki_config:
+            missing_values.append("system_dep")
+
     if len(missing_values) > 0:
         print(f"Missing values in docki.yaml: {', '.join(missing_values)}")
         print("Please fill in the missing values and run the script again.")
@@ -478,6 +478,9 @@ usage:
     options:
         -h, --help  Show this message and exit.
         --init      Create a docki.yaml file in the project root.
+        --remote    Opens a one to many remote connection on hosts specified in the docki.yaml file.
+        --clean     Remove the Docker container after it has been stopped.
+        --output    Output the Dockerfile, build.sh, run.sh, setup_venv.sh, and start.sh files.
 
     commands:
         COMMAND     The command to run in the Docker container.
