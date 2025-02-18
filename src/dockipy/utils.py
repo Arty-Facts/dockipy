@@ -297,11 +297,16 @@ def get_docki_config(project_root, remote=False):
     if remote:
         if "remote" not in docki_config:
             missing_values.append("remote")
+        if "tag" not in docki_config:
+            missing_values.append("tag")
+
     else:
         if "base_image" not in docki_config:
             missing_values.append("base_image")
         if "system_dep" not in docki_config:
             missing_values.append("system_dep")
+        if "tag" not in docki_config:
+            missing_values.append("tag")
 
     if len(missing_values) > 0:
         print(f"Missing values in docki.yaml: {', '.join(missing_values)}")
