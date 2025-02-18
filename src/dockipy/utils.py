@@ -50,7 +50,10 @@ def build_dockerfile(
     project_root: str = "/",
     user_id: int = 1000,
     group_id: int = 1000,
-):
+):  
+    system_commands_str = ""
+    if len(system_commands) > 0:
+        system_commands_str = "RUN " + " && ".join(system_commands)
     return f'''FROM {base_image}
 
 # Avoid interactive prompts
@@ -68,7 +71,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Add system commands
-RUN {' && '.join(system_commands)}
+{system_commands_str}
 # if needed to add user and group
 # RUN sed -i 's/^\(passwd:\).*/\1 files/' /etc/nsswitch.conf && \
 #     sed -i 's/^\(group:\).*/\1 files/' /etc/nsswitch.conf && \
